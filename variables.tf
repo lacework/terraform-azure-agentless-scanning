@@ -69,7 +69,7 @@ variable "custom_network" {
     )
     error_message = <<EOF
     Incorrectly formatted network input. Use a full Resource ID in this format: 
-    /subscriptions/<subscription_id>/resourceGroups/<rg_id>/providers/Microsoft.Network/virtualNetworks/<vnet_id>/subnets/<subnet_id>
+    /subscriptions/<subscription_id>/resourceGroups/<rg_id>/providers/Microsoft.Network/virtualNetworks/<vnet_id>/subnets/<subnet_id> .
     EOF
   }
 }
@@ -92,7 +92,7 @@ variable "owner_id" {
   description = "Owner for service account created. Azure recommends having one"
   validation {
     condition     = can(regex("^[a-z0-9-]*$", var.owner_id))
-    error_message = "Owner id needs to be of format xxxx-xxxx-xxxx-xxxx-xxxxx"
+    error_message = "Owner id needs to be of format xxxx-xxxx-xxxx-xxxx-xxxxx."
   }
 }
 
@@ -182,7 +182,7 @@ variable "integration_level" {
   description = "If we are integrating into a subscription or tenant. Valid values are 'subscription' or 'tenant'"
   validation {
     condition     = upper(var.integration_level) == "SUBSCRIPTION" || upper(var.integration_level) == "TENANT"
-    error_message = "Valid values are 'SUBSCRIPTION' or 'TENANT'"
+    error_message = "Valid values are 'SUBSCRIPTION' or 'TENANT'."
   }
 }
 
@@ -223,7 +223,7 @@ variable "subscriptions_list" {
   default     = []
   validation {
     condition     = alltrue([for sub in var.subscriptions_list : can(regex("^-?/subscriptions/.*", sub))])
-    error_message = "Need to be a list of fully qualified subscriptions (starting with '/subscriptions/', with optional '-' prefix"
+    error_message = "Need to be a list of fully qualified subscriptions (starting with '/subscriptions/', with optional '-' prefix."
   }
 }
 /* **************** End Monitored Section **************** */
@@ -245,7 +245,7 @@ variable "storage_account_url" {
   default     = ""
   validation {
     condition     = length(var.storage_account_url) == 0 || can(regex("^(https://?)[A-Za-z0-9.-]+(:[0-9]+)?(/[\\S]*)?$", var.storage_account_url))
-    error_message = "Please provide a valid storage account url or leave it blank to create a new one"
+    error_message = "Please provide a valid storage account url or leave it blank to create a new one."
   }
 }
 
