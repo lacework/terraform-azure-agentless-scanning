@@ -7,10 +7,6 @@ module "lacework_azure_agentless_scanning_subscription_us_west" {
   is_global_resource             = true
   create_log_analytics_workspace = true
   region                         = "West US"
-  scanning_subscription_id       = "xxxxxxxx-1234-5678-abcd-xxxxxxxxxxxx"
-  subscriptions_list = [
-    "/subscriptions/xxxxxxxx-4321-8765-dcba-xxxxxxxxxxxx",
-  ]
 }
 
 module "lacework_azure_agentless_scanning_subscription_us_east" {
@@ -21,8 +17,4 @@ module "lacework_azure_agentless_scanning_subscription_us_east" {
   create_log_analytics_workspace = true
   global_module_reference        = module.lacework_azure_agentless_scanning_subscription_us_west
   region                         = "East US"
-  scanning_subscription_id       = "xxxxxxxx-1234-5678-abcd-xxxxxxxxxxxx"
-  subscriptions_list = [
-    "/subscriptions/xxxxxxxx-4321-8765-dcba-xxxxxxxxxxxx",
-  ]
 }

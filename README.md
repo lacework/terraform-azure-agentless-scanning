@@ -22,11 +22,11 @@ All code contributions made by Lacework customers to this repo are considered â€
 
 | Name | Version |
 |------|---------|
-| <a name="provider_azapi"></a> [azapi](#provider\_azapi) | 1.9.0 |
-| <a name="provider_azuread"></a> [azuread](#provider\_azuread) | 2.15.0 |
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | 3.77.0 |
-| <a name="provider_lacework"></a> [lacework](#provider\_lacework) | 1.16.0 |
-| <a name="provider_random"></a> [random](#provider\_random) | 3.5.1 |
+| <a name="provider_azapi"></a> [azapi](#provider\_azapi) | n/a |
+| <a name="provider_azuread"></a> [azuread](#provider\_azuread) | ~> 2.45.0 |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 3.77.0 |
+| <a name="provider_lacework"></a> [lacework](#provider\_lacework) | >= 1.17 |
+| <a name="provider_random"></a> [random](#provider\_random) | n/a |
 
 ## Modules
 
@@ -76,7 +76,7 @@ No modules.
 | <a name="input_create_log_analytics_workspace"></a> [create\_log\_analytics\_workspace](#input\_create\_log\_analytics\_workspace) | Creates a log analytics workspace to see container logs. Defaults to false to avoid charging | `bool` | `false` | no |
 | <a name="input_custom_network"></a> [custom\_network](#input\_custom\_network) | The name of the custom Azure Virtual Network subnet. Make sure it allows egress traffic on port 443. Leave empty to create a new one. | `string` | `""` | no |
 | <a name="input_filter_query_text"></a> [filter\_query\_text](#input\_filter\_query\_text) | The LQL query to constrain the scanning to specific resources. If left blank, Lacework will scan all resources available to the account or organization. For more information, see [Limit Scanned Workloads](https://docs.lacework.net/onboarding/lacework-console-agentless-workload-scanning#aws---limit-scanned-workloads). | `string` | `""` | no |
-| <a name="input_global_module_reference"></a> [global\_module\_reference](#input\_global\_module\_reference) | A reference to the global lacework\_azure\_agentless\_scanning module for this account. | <pre>object({<br>    scanning_resource_group_name                = string<br>    key_vault_id                                = string<br>    key_vault_uri                               = string<br>    key_vault_secret_name                       = string<br>    lacework_account                            = string<br>    lacework_domain                             = string<br>    storage_account_name                        = string<br>    storage_account_id                          = string<br>    blob_container_name                         = string<br>    prefix                                      = string<br>    suffix                                      = string<br>    monitored_subscription_role_definition_name = string<br>    scanning_subscription_role_definition_name  = string<br>    sidekick_principal_id                       = string<br>    sidekick_client_id                          = string<br>  })</pre> | <pre>{<br>  "blob_container_name": "",<br>  "key_vault_id": "",<br>  "key_vault_secret_name": "",<br>  "key_vault_uri": "",<br>  "lacework_account": "",<br>  "lacework_domain": "",<br>  "monitored_subscription_role_definition_name": "",<br>  "prefix": "",<br>  "scanning_resource_group_name": "",<br>  "scanning_subscription_role_definition_name": "",<br>  "sidekick_client_id": "",<br>  "sidekick_principal_id": "",<br>  "storage_account_id": "",<br>  "storage_account_name": "",<br>  "suffix": ""<br>}</pre> | no |
+| <a name="input_global_module_reference"></a> [global\_module\_reference](#input\_global\_module\_reference) | A reference to the global lacework\_azure\_agentless\_scanning module for this account. | <pre>object({<br>    scanning_resource_group_name              = string<br>    key_vault_id                              = string<br>    key_vault_uri                             = string<br>    key_vault_secret_name                     = string<br>    lacework_account                          = string<br>    lacework_domain                           = string<br>    storage_account_name                      = string<br>    storage_account_id                        = string<br>    blob_container_name                       = string<br>    prefix                                    = string<br>    suffix                                    = string<br>    monitored_subscription_role_definition_id = string<br>    scanning_subscription_role_definition_id  = string<br>    sidekick_principal_id                     = string<br>    sidekick_client_id                        = string<br>  })</pre> | <pre>{<br>  "blob_container_name": "",<br>  "key_vault_id": "",<br>  "key_vault_secret_name": "",<br>  "key_vault_uri": "",<br>  "lacework_account": "",<br>  "lacework_domain": "",<br>  "monitored_subscription_role_definition_id": "",<br>  "prefix": "",<br>  "scanning_resource_group_name": "",<br>  "scanning_subscription_role_definition_id": "",<br>  "sidekick_client_id": "",<br>  "sidekick_principal_id": "",<br>  "storage_account_id": "",<br>  "storage_account_name": "",<br>  "suffix": ""<br>}</pre> | no |
 | <a name="input_image_url"></a> [image\_url](#input\_image\_url) | The container image url for Lacework Agentless Workload Scanning. | `string` | `"public.ecr.aws/p5r4i7k7/sidekick:latest"` | no |
 | <a name="input_integration_level"></a> [integration\_level](#input\_integration\_level) | If we are integrating into a subscription or tenant. Valid values are 'subscription' or 'tenant' | `string` | n/a | yes |
 | <a name="input_is_global_resource"></a> [is\_global\_resource](#input\_is\_global\_resource) | Whether we create global resources for this deployment. Defaults to `false` | `bool` | `false` | no |
@@ -114,14 +114,13 @@ No modules.
 | <a name="output_key_vault_uri"></a> [key\_vault\_uri](#output\_key\_vault\_uri) | The URI of the key vault that stores LW account details |
 | <a name="output_lacework_account"></a> [lacework\_account](#output\_lacework\_account) | Lacework Account Name for Integration. |
 | <a name="output_lacework_domain"></a> [lacework\_domain](#output\_lacework\_domain) | Lacework Domain Name for Integration. |
-| <a name="output_monitored_subscription_role_definition_name"></a> [monitored\_subscription\_role\_definition\_name](#output\_monitored\_subscription\_role\_definition\_name) | The name of the monitored subscription role definition name |
+| <a name="output_monitored_subscription_role_definition_id"></a> [monitored\_subscription\_role\_definition\_id](#output\_monitored\_subscription\_role\_definition\_id) | The id of the monitored subscription role definition |
 | <a name="output_prefix"></a> [prefix](#output\_prefix) | Prefix used to add uniqueness to resource names. |
 | <a name="output_scanning_resource_group_name"></a> [scanning\_resource\_group\_name](#output\_scanning\_resource\_group\_name) | Name of the resource group hosting the scanner |
-| <a name="output_scanning_subscription_role_definition_name"></a> [scanning\_subscription\_role\_definition\_name](#output\_scanning\_subscription\_role\_definition\_name) | The name of the scanning subscription role definition name |
+| <a name="output_scanning_subscription_role_definition_id"></a> [scanning\_subscription\_role\_definition\_id](#output\_scanning\_subscription\_role\_definition\_id) | The id of the scanning subscription role definition |
 | <a name="output_sidekick_client_id"></a> [sidekick\_client\_id](#output\_sidekick\_client\_id) | Client id of the managed identity running scanner |
 | <a name="output_sidekick_principal_id"></a> [sidekick\_principal\_id](#output\_sidekick\_principal\_id) | The principal id of the user identity used by agentless scanner |
 | <a name="output_storage_account_id"></a> [storage\_account\_id](#output\_storage\_account\_id) | The ID of storage account used for scanning |
 | <a name="output_storage_account_name"></a> [storage\_account\_name](#output\_storage\_account\_name) | The blob storage account for Agentless Workload Scanning data. |
 | <a name="output_suffix"></a> [suffix](#output\_suffix) | Suffix used to add uniqueness to resource names. |
-
 <!-- END_TF_DOCS -->

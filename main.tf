@@ -391,15 +391,15 @@ instances as well as to create snapshots.
 */
 
 resource "azurerm_role_assignment" "scanner" {
-  count      = var.is_global_resource ? 1 : 0
+  count = var.is_global_resource ? 1 : 0
   depends_on = [
     azurerm_role_definition.agentless_scanning_subscription[0],
     azurerm_user_assigned_identity.sidekick,
   ]
 
-  principal_id         = local.sidekick_principal_id
-  role_definition_id   = local.scanning_subscription_role_definition_id
-  scope                = local.scanning_subscription_id
+  principal_id       = local.sidekick_principal_id
+  role_definition_id = local.scanning_subscription_role_definition_id
+  scope              = local.scanning_subscription_id
 }
 
 resource "azurerm_role_assignment" "orchestrate" {
@@ -409,9 +409,9 @@ resource "azurerm_role_assignment" "orchestrate" {
     azurerm_user_assigned_identity.sidekick,
   ]
 
-  principal_id         = local.sidekick_principal_id
-  role_definition_id   = local.monitored_subscription_role_definition_id
-  scope                = each.value
+  principal_id       = local.sidekick_principal_id
+  role_definition_id = local.monitored_subscription_role_definition_id
+  scope              = each.value
 }
 
 /* **************** End Scanning **************** */
