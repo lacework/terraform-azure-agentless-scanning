@@ -249,20 +249,13 @@ variable "storage_account_url" {
   }
 }
 
-/* **************** End Monitored Section **************** */
+/* **************** End Storage Section **************** */
 
 variable "filter_query_text" {
   type        = string
   description = "The LQL query to constrain the scanning to specific resources. If left blank, Lacework will scan all resources available to the account or organization. For more information, see [Limit Scanned Workloads](https://docs.lacework.net/onboarding/lacework-console-agentless-workload-scanning#aws---limit-scanned-workloads)."
   default     = ""
 }
-
-// TODO: set up github action for tf docs (https://github.com/terraform-docs/terraform-docs#using-github-actions)
-
-/* 
-storage account 
-
- */
 
 variable "global_module_reference" {
   type = object({

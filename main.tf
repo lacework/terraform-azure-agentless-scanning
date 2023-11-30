@@ -87,20 +87,19 @@ locals {
     AZURE_SCANNING_SUBSCRIPTION_ID    = local.scanning_subscription_id_only
     AZURE_SCANNER_RESOURCE_GROUP_NAME = local.scanning_resource_group_name
     AZURE_INTEGRATION_LEVEL           = local.integration_level
-    /* TODO: remove the blob container name after sidekick uses the generic env */
-    AZURE_BLOB_CONTAINER_NAME   = local.blob_container_name
-    LACEWORK_APISERVER          = "${local.lacework_account}.${local.lacework_domain}"
-    LOCAL_STORAGE               = "/tmp"
-    STARTUP_SERVICE             = "ORCHESTRATE"
-    AZURE_STORAGE_ACCOUNT_URL   = local.storage_account_url
-    SIDEKICK_BUCKET             = local.blob_container_name
-    SIDEKICK_REGION             = local.region
-    STARTUP_RUNMODE             = "TASK"
-    AZURE_CUSTOM_NETWORK        = local.custom_network
-    AZURE_USER_IDENTITY         = local.sidekick_principal_name_fully_qualified
-    AZURE_CLIENT_ID             = local.sidekick_client_id
-    AZURE_KEY_VAULT_SECRET_NAME = local.key_vault_secret_name
-    AZURE_KEY_VAULT_URI         = local.key_vault_uri
+    AZURE_BLOB_CONTAINER_NAME         = local.blob_container_name
+    LACEWORK_APISERVER                = "${local.lacework_account}.${local.lacework_domain}"
+    LOCAL_STORAGE                     = "/tmp"
+    STARTUP_SERVICE                   = "ORCHESTRATE"
+    AZURE_STORAGE_ACCOUNT_URL         = local.storage_account_url
+    SIDEKICK_BUCKET                   = local.blob_container_name
+    SIDEKICK_REGION                   = local.region
+    STARTUP_RUNMODE                   = "TASK"
+    AZURE_CUSTOM_NETWORK              = local.custom_network
+    AZURE_USER_IDENTITY               = local.sidekick_principal_name_fully_qualified
+    AZURE_CLIENT_ID                   = local.sidekick_client_id
+    AZURE_KEY_VAULT_SECRET_NAME       = local.key_vault_secret_name
+    AZURE_KEY_VAULT_URI               = local.key_vault_uri
   }
   environment_variables_as_list = [for key, val in local.environment_variables : { name = key, value = val }]
 
