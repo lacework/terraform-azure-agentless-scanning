@@ -6,7 +6,7 @@
 #
 set -eou pipefail
 
-readonly project_name=terraform-<PROVIDER>-<NAME>
+readonly project_name=terraform-azure-agentless-scanning
 
 TEST_CASES=(
   examples/default

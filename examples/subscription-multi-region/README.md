@@ -1,0 +1,1 @@
+This example creates resources for multi-region subscription-level deployment.

@@ -1,0 +1,1 @@
+This example creates resources for the current subscription used by Azure Resource Manager. It's the bare bone example of single region single subscription deployment.
