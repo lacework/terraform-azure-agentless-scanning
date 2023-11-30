@@ -70,7 +70,7 @@ variable "custom_network" {
     error_message = <<EOF
     Incorrectly formatted network input. Use a full Resource ID in this format: 
     /subscriptions/<subscription_id>/resourceGroups/<rg_id>/providers/Microsoft.Network/virtualNetworks/<vnet_id>/subnets/<subnet_id>.
-    EOF
+EOF
   }
 }
 
