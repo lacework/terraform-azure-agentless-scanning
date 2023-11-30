@@ -67,10 +67,7 @@ variable "custom_network" {
     condition = length(var.custom_network) == 0 || can(
       regex("^/subscriptions/.*/resourceGroups/.*/providers/Microsoft.Network/virtualNetworks/.*/subnets/.*$", var.custom_network)
     )
-    error_message = <<EOF
-    Incorrectly formatted network input. Use a full Resource ID in this format: 
-    /subscriptions/<subscription_id>/resourceGroups/<rg_id>/providers/Microsoft.Network/virtualNetworks/<vnet_id>/subnets/<subnet_id>.
-EOF
+    error_message = "Incorrectly formatted network input. Use a full Resource ID in this format: /subscriptions/<subscription_id>/resourceGroups/<rg_id>/providers/Microsoft.Network/virtualNetworks/<vnet_id>/subnets/<subnet_id>."
   }
 }
 
