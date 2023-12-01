@@ -5,7 +5,7 @@ provider "lacework" {}
 module "lacework_azure_agentless_scanning_single_tenant" {
   source = "../.."
 
-  is_global_resource             = true
+  global                         = true
   create_log_analytics_workspace = true
   integration_level              = "tenant"
   tags                           = { "lw-example-tf" : "true" }

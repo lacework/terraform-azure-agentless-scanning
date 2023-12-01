@@ -1,11 +1,11 @@
 output "agentless_credentials_client_secret" {
-  value       = var.is_global_resource ? azuread_service_principal_password.data_loader[0].value : ""
+  value       = var.global ? azuread_service_principal_password.data_loader[0].value : ""
   description = "Client secret of the service principal of Lacework app"
   sensitive   = true
 }
 
 output "agentless_credentials_client_id" {
-  value       = var.is_global_resource ? azuread_service_principal.data_loader[0].client_id : ""
+  value       = var.global ? azuread_service_principal.data_loader[0].client_id : ""
   description = "Client id of the service principal of Lacework app"
 }
 

@@ -53,7 +53,7 @@ module "lacework_azure_agentless_scanning_rg_and_vnet" {
   source = "../.."
 
   integration_level              = "SUBSCRIPTION"
-  is_global_resource             = true
+  global                         = true
   custom_network                 = "" // tolist(azurerm_virtual_network.example.subnet)[0].id
   create_log_analytics_workspace = true
   region                         = local.region
