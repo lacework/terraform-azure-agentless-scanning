@@ -98,7 +98,7 @@ variable "owner_id" {
 To support multi-region deployment, we'll need to create some resource multiple times (one resource each region),
 while other resources will be created only once and used by all regions globally. During deployment, the latter 
 needs to be created first, and those resources will have their reference names/ids passed to the creation of resources 
-in other regions, and there those global resources won't be creted again. We use `is_global_resources` to flag whether 
+in other regions, and there those global resources won't be creted again. We use `global` to flag whether 
 the current deployment should create those global resources.
 Here's a resource run-down:
 Global resources:
@@ -111,7 +111,7 @@ Regional resources:
   - Container App Jobs
  */
 
-variable "is_global_resource" {
+variable "global" {
   type        = bool
   default     = false
   description = "Whether we create global resources for this deployment. Defaults to `false`"
@@ -148,7 +148,7 @@ variable "scan_multi_volume" {
 
 variable "scan_stopped_instances" {
   type        = bool
-  description = "Whether to scan stopped instances. Defaults to `false`."
+  description = "Whether to scan stopped instances. Defaults to `true`."
   default     = true
 }
 

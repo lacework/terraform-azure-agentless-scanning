@@ -2,7 +2,7 @@
 // Use	 : Enumerate Instances & Access Disks in monitored resource groups for snapshot creation
 
 resource "azurerm_role_definition" "agentless_monitored_subscription" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
 
   name  = replace("${var.prefix}-snapshot-${local.suffix}", "-", "_")
   scope = local.monitored_role_scopes[0]
@@ -26,7 +26,7 @@ resource "azurerm_role_definition" "agentless_monitored_subscription" {
 // Use	 : Create & Delete resources in scanner subscription
 // Role for Scanner Instances to interact with resources in Scanner subscription
 resource "azurerm_role_definition" "agentless_scanning_subscription" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
 
   name  = replace("${var.prefix}-scanner-${local.suffix}", "-", "_")
   scope = local.scanning_subscription_id

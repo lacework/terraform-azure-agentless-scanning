@@ -63,7 +63,7 @@ locals {
   /* Note: only lower case letters and numbers allowed, length between 3 and 24 */
   storage_account_name = length(var.storage_account_url) == 0 ? "${local.prefix}scan${local.suffix}" : local.matches[length(local.matches) - 1]
   storage_account_url  = length(var.storage_account_url) > 0 ? var.storage_account_url : "https://${local.storage_account_name}.blob.core.windows.net"
-  storage_account_id   = var.is_global_resource ? azurerm_storage_account.scanning[0].id : var.global_module_reference.storage_account_id
+  storage_account_id   = var.global ? azurerm_storage_account.scanning[0].id : var.global_module_reference.storage_account_id
 
   provided_subscriptions_list = [for sub in var.subscriptions_list : sub if !(substr(sub, 0, 1) == "-")]
   /* if subscription list is provided, use it, otherwise, use all available subscriptions minus excluded subscriptions */
@@ -103,21 +103,21 @@ locals {
   }
   environment_variables_as_list = [for key, val in local.environment_variables : { name = key, value = val }]
 
-  key_vault_id = var.is_global_resource ? azurerm_key_vault.lw_orchestrate[0].id : (
+  key_vault_id = var.global ? azurerm_key_vault.lw_orchestrate[0].id : (
     length(var.global_module_reference.key_vault_id) > 0 ? var.global_module_reference.key_vault_id : var.key_vault_id
   )
-  key_vault_secret_name = var.is_global_resource ? "${local.prefix}-secret-${local.suffix}" : var.global_module_reference.key_vault_secret_name
-  key_vault_uri         = var.is_global_resource ? azurerm_key_vault.lw_orchestrate[0].vault_uri : var.global_module_reference.key_vault_uri
+  key_vault_secret_name = var.global ? "${local.prefix}-secret-${local.suffix}" : var.global_module_reference.key_vault_secret_name
+  key_vault_uri         = var.global ? azurerm_key_vault.lw_orchestrate[0].vault_uri : var.global_module_reference.key_vault_uri
 
   /* role_definition_id created as part of azurerm_role_definition creation contains an extra '|' character in the end, which needs to be removed (using split) */
-  monitored_subscription_role_definition_id = var.is_global_resource ? split("|", azurerm_role_definition.agentless_monitored_subscription[0].id)[0] : var.global_module_reference.monitored_subscription_role_definition_id
-  scanning_subscription_role_definition_id  = var.is_global_resource ? split("|", azurerm_role_definition.agentless_scanning_subscription[0].id)[0] : var.global_module_reference.scanning_subscription_role_definition_id
+  monitored_subscription_role_definition_id = var.global ? split("|", azurerm_role_definition.agentless_monitored_subscription[0].id)[0] : var.global_module_reference.monitored_subscription_role_definition_id
+  scanning_subscription_role_definition_id  = var.global ? split("|", azurerm_role_definition.agentless_scanning_subscription[0].id)[0] : var.global_module_reference.scanning_subscription_role_definition_id
 
   sidekick_principal_id                   = length(var.global_module_reference.sidekick_principal_id) > 0 ? var.global_module_reference.sidekick_principal_id : azurerm_user_assigned_identity.sidekick[0].principal_id
   sidekick_principal_name                 = "${local.prefix}-identity-${local.suffix}"
   sidekick_principal_name_fully_qualified = "/subscriptions/${local.scanning_subscription_id_only}/resourceGroups/${local.scanning_resource_group_name}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${local.sidekick_principal_name}"
 
-  sidekick_client_id = var.is_global_resource ? azurerm_user_assigned_identity.sidekick[0].client_id : var.global_module_reference.sidekick_client_id
+  sidekick_client_id = var.global ? azurerm_user_assigned_identity.sidekick[0].client_id : var.global_module_reference.sidekick_client_id
 
   custom_network = length(var.custom_network) > 0 ? var.custom_network : (var.regional ? tolist(azurerm_virtual_network.agentless_orchestrate[0].subnet)[0].id : "")
 
@@ -134,7 +134,7 @@ version is upgraded.
 */
 /* check "check_global_resource_condition" {
   assert {
-    condition = var.is_global_resource || (
+    condition = var.global || (
       length(var.global_module_reference.storage_account_id) > 0 &&
       length(var.global_module_reference.scanning_subscription_role_definition_id) > 0 &&
       length(var.global_module_reference.monitored_subscription_role_definition_id) > 0 &&
@@ -154,21 +154,21 @@ resource "random_id" "uniq" {
 }
 
 resource "azurerm_resource_group" "scanning_rg" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
 
   name     = local.scanning_resource_group_name
   location = local.region
 }
 
 data "azurerm_resource_group" "scanning_rg" {
-  count = var.is_global_resource ? 0 : 1
+  count = var.global ? 0 : 1
 
   name = local.scanning_resource_group_name
 }
 
 // Lacework Cloud Account Integration
 resource "lacework_integration_azure_agentless_scanning" "lacework_cloud_account" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
   /* LW integration verifies that the storage account's existence using a registered
   app, hence the depency below 
   */
@@ -205,14 +205,14 @@ This section defines resources that are shared by individual sections down below
 */
 
 resource "azuread_application" "lw" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
 
   display_name = "laceworkagentless"
   owners       = local.owners
 }
 
 resource "azuread_service_principal" "data_loader" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
 
   client_id                    = azuread_application.lw[0].client_id
   app_role_assignment_required = true
@@ -223,14 +223,14 @@ resource "azuread_service_principal" "data_loader" {
 }
 
 resource "azuread_service_principal_password" "data_loader" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
 
   service_principal_id = azuread_service_principal.data_loader[0].object_id
   end_date_relative    = "87600h" // expires in 10 years
 }
 
 resource "azurerm_user_assigned_identity" "sidekick" {
-  count      = var.is_global_resource ? 1 : 0
+  count      = var.global ? 1 : 0
   depends_on = [azurerm_resource_group.scanning_rg]
 
   location            = local.region
@@ -246,7 +246,7 @@ resource "azurerm_user_assigned_identity" "sidekick" {
 Define the key vault which holds integration details 
 */
 resource "azurerm_key_vault" "lw_orchestrate" {
-  count      = var.is_global_resource ? 1 : 0
+  count      = var.global ? 1 : 0
   depends_on = [azurerm_resource_group.scanning_rg]
 
   name                       = "${local.prefix}-agentless-${local.suffix}"
@@ -269,7 +269,7 @@ id (as an env variable) to be created, while the key vault needs the container
 app managed identity to create access policies.
  */
 resource "azurerm_key_vault_access_policy" "access_for_sidekick" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
 
   key_vault_id = local.key_vault_id
   tenant_id    = local.tenant_id
@@ -284,7 +284,7 @@ resource "azurerm_key_vault_access_policy" "access_for_sidekick" {
 }
 
 resource "azurerm_key_vault_access_policy" "access_for_user" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
 
   key_vault_id = local.key_vault_id
   tenant_id    = local.tenant_id
@@ -305,7 +305,7 @@ resource "azurerm_key_vault_access_policy" "access_for_user" {
 
 /* assign key vault contributor role to the service principal */
 resource "azurerm_role_assignment" "key_vault_sidekick" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
 
   scope                = local.key_vault_id
   role_definition_name = "Key Vault Contributor"
@@ -314,7 +314,7 @@ resource "azurerm_role_assignment" "key_vault_sidekick" {
 
 /* assign key vault contributor role to the current user */
 resource "azurerm_role_assignment" "key_vault_user" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
 
   scope                = local.key_vault_id
   role_definition_name = "Key Vault Contributor"
@@ -322,7 +322,7 @@ resource "azurerm_role_assignment" "key_vault_user" {
 }
 
 resource "azurerm_key_vault_secret" "lw_orchestrate" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
   depends_on = [
     lacework_integration_azure_agentless_scanning.lacework_cloud_account,
     azurerm_key_vault_access_policy.access_for_user
@@ -349,7 +349,7 @@ The storage account is used to store analysis data
 
 resource "azurerm_storage_account" "scanning" {
   depends_on = [azurerm_resource_group.scanning_rg]
-  count      = var.is_global_resource ? 1 : 0
+  count      = var.global ? 1 : 0
 
   name                = local.storage_account_name
   resource_group_name = local.scanning_resource_group_name
@@ -362,7 +362,7 @@ resource "azurerm_storage_account" "scanning" {
 }
 
 resource "azurerm_storage_container" "scanning" {
-  count      = var.is_global_resource ? 1 : 0
+  count      = var.global ? 1 : 0
   depends_on = [azurerm_storage_account.scanning]
 
   name                  = local.blob_container_name
@@ -371,7 +371,7 @@ resource "azurerm_storage_container" "scanning" {
 }
 
 resource "azurerm_role_assignment" "storage_sidekick" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
 
   principal_id         = local.sidekick_principal_id
   role_definition_name = "Storage Blob Data Contributor"
@@ -379,7 +379,7 @@ resource "azurerm_role_assignment" "storage_sidekick" {
 }
 
 resource "azurerm_role_assignment" "storage_data_loader" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
 
   principal_id         = azuread_service_principal.data_loader[0].object_id
   role_definition_name = "Storage Blob Data Reader"
@@ -393,7 +393,7 @@ instances as well as to create snapshots.
 */
 
 resource "azurerm_role_assignment" "scanner" {
-  count = var.is_global_resource ? 1 : 0
+  count = var.global ? 1 : 0
   depends_on = [
     azurerm_role_definition.agentless_scanning_subscription[0],
     azurerm_user_assigned_identity.sidekick,
@@ -405,7 +405,7 @@ resource "azurerm_role_assignment" "scanner" {
 }
 
 resource "azurerm_role_assignment" "orchestrate" {
-  for_each = var.is_global_resource ? toset(local.included_subscriptions_list) : []
+  for_each = var.global ? toset(local.included_subscriptions_list) : []
   depends_on = [
     azurerm_role_definition.agentless_monitored_subscription[0],
     azurerm_user_assigned_identity.sidekick,
@@ -496,7 +496,7 @@ resource "azapi_resource" "container_app_job_agentless" {
   }
 
   location  = local.region
-  parent_id = var.is_global_resource ? azurerm_resource_group.scanning_rg[0].id : data.azurerm_resource_group.scanning_rg[0].id
+  parent_id = var.global ? azurerm_resource_group.scanning_rg[0].id : data.azurerm_resource_group.scanning_rg[0].id
   tags      = var.tags
 
   body = jsonencode({

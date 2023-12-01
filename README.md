@@ -5,7 +5,7 @@
 [![GitHub release](https://img.shields.io/github/release/lacework/terraform-gcp-agentless-scanning.svg)](https://github.com/lacework/terraform-gcp-agentless-scanning/releases/)
 [![Codefresh build status](https://g.codefresh.io/api/badges/pipeline/lacework/terraform-modules%2Ftest-compatibility?type=cf-1&key=eyJhbGciOiJIUzI1NiJ9.NWVmNTAxOGU4Y2FjOGQzYTkxYjg3ZDEx.RJ3DEzWmBXrJX7m38iExJ_ntGv4_Ip8VTa-an8gBwBo)](https://g.codefresh.io/pipelines/edit/new/builds?id=607e25e6728f5a6fba30431b&pipeline=test-compatibility&projects=terraform-modules&projectId=607db54b728f5a5f8930405d)
 
-A Terraform Module to configure the Lacework Agentless Scanner.
+A Terraform Module to configure the Lacework Agentless Scanner on Azure.
 
 All code contributions made by Lacework customers to this repo are considered ‘Feedback’ under section 4.3 of the Lacework Terms of Service.
 <!-- BEGIN_TF_DOCS -->
@@ -13,7 +13,7 @@ All code contributions made by Lacework customers to this repo are considered �
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.14 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13 |
 | <a name="requirement_azuread"></a> [azuread](#requirement\_azuread) | ~> 2.45.0 |
 | <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 3.77.0 |
 | <a name="requirement_lacework"></a> [lacework](#requirement\_lacework) | >= 1.17 |
@@ -76,10 +76,10 @@ No modules.
 | <a name="input_create_log_analytics_workspace"></a> [create\_log\_analytics\_workspace](#input\_create\_log\_analytics\_workspace) | Creates a log analytics workspace to see container logs. Defaults to false to avoid charging | `bool` | `false` | no |
 | <a name="input_custom_network"></a> [custom\_network](#input\_custom\_network) | The name of the custom Azure Virtual Network subnet. Make sure it allows egress traffic on port 443. Leave empty to create a new one. | `string` | `""` | no |
 | <a name="input_filter_query_text"></a> [filter\_query\_text](#input\_filter\_query\_text) | The LQL query to constrain the scanning to specific resources. If left blank, Lacework will scan all resources available to the account or organization. For more information, see [Limit Scanned Workloads](https://docs.lacework.net/onboarding/lacework-console-agentless-workload-scanning#aws---limit-scanned-workloads). | `string` | `""` | no |
+| <a name="input_global"></a> [global](#input\_global) | Whether we create global resources for this deployment. Defaults to `false` | `bool` | `false` | no |
 | <a name="input_global_module_reference"></a> [global\_module\_reference](#input\_global\_module\_reference) | A reference to the global lacework\_azure\_agentless\_scanning module for this account. | <pre>object({<br>    scanning_resource_group_name              = string<br>    key_vault_id                              = string<br>    key_vault_uri                             = string<br>    key_vault_secret_name                     = string<br>    lacework_account                          = string<br>    lacework_domain                           = string<br>    storage_account_name                      = string<br>    storage_account_id                        = string<br>    blob_container_name                       = string<br>    prefix                                    = string<br>    suffix                                    = string<br>    monitored_subscription_role_definition_id = string<br>    scanning_subscription_role_definition_id  = string<br>    sidekick_principal_id                     = string<br>    sidekick_client_id                        = string<br>  })</pre> | <pre>{<br>  "blob_container_name": "",<br>  "key_vault_id": "",<br>  "key_vault_secret_name": "",<br>  "key_vault_uri": "",<br>  "lacework_account": "",<br>  "lacework_domain": "",<br>  "monitored_subscription_role_definition_id": "",<br>  "prefix": "",<br>  "scanning_resource_group_name": "",<br>  "scanning_subscription_role_definition_id": "",<br>  "sidekick_client_id": "",<br>  "sidekick_principal_id": "",<br>  "storage_account_id": "",<br>  "storage_account_name": "",<br>  "suffix": ""<br>}</pre> | no |
 | <a name="input_image_url"></a> [image\_url](#input\_image\_url) | The container image url for Lacework Agentless Workload Scanning. | `string` | `"public.ecr.aws/p5r4i7k7/sidekick:latest"` | no |
 | <a name="input_integration_level"></a> [integration\_level](#input\_integration\_level) | If we are integrating into a subscription or tenant. Valid values are 'subscription' or 'tenant' | `string` | n/a | yes |
-| <a name="input_is_global_resource"></a> [is\_global\_resource](#input\_is\_global\_resource) | Whether we create global resources for this deployment. Defaults to `false` | `bool` | `false` | no |
 | <a name="input_key_vault_id"></a> [key\_vault\_id](#input\_key\_vault\_id) | The ID of the Key Vault containing the Lacework Account and Auth Token | `string` | `""` | no |
 | <a name="input_lacework_account"></a> [lacework\_account](#input\_lacework\_account) | The name of the Lacework account with which to integrate. | `string` | `""` | no |
 | <a name="input_lacework_domain"></a> [lacework\_domain](#input\_lacework\_domain) | The domain of the Lacework account with with to integrate. | `string` | `"lacework.net"` | no |
@@ -93,7 +93,7 @@ No modules.
 | <a name="input_scan_frequency_hours"></a> [scan\_frequency\_hours](#input\_scan\_frequency\_hours) | How often in hours the scan will run in hours. Defaults to `24`. | `number` | `24` | no |
 | <a name="input_scan_host_vulnerabilities"></a> [scan\_host\_vulnerabilities](#input\_scan\_host\_vulnerabilities) | Whether to includes scanning for host vulnerabilities.  Defaults to `true`. | `bool` | `true` | no |
 | <a name="input_scan_multi_volume"></a> [scan\_multi\_volume](#input\_scan\_multi\_volume) | Whether to scan secondary volumes. Defaults to `false`. | `bool` | `false` | no |
-| <a name="input_scan_stopped_instances"></a> [scan\_stopped\_instances](#input\_scan\_stopped\_instances) | Whether to scan stopped instances. Defaults to `false`. | `bool` | `true` | no |
+| <a name="input_scan_stopped_instances"></a> [scan\_stopped\_instances](#input\_scan\_stopped\_instances) | Whether to scan stopped instances. Defaults to `true`. | `bool` | `true` | no |
 | <a name="input_scanning_resource_group_name"></a> [scanning\_resource\_group\_name](#input\_scanning\_resource\_group\_name) | The name of the resource group where LW sidekick is deployed. Leave blank to create a new one | `string` | `""` | no |
 | <a name="input_scanning_subscription_id"></a> [scanning\_subscription\_id](#input\_scanning\_subscription\_id) | SubcriptionId where LW Sidekick is deployed. Leave blank to use the current one used by Azure Resource Manager. Show it through `az account show` | `string` | `""` | no |
 | <a name="input_storage_account_url"></a> [storage\_account\_url](#input\_storage\_account\_url) | url of the storage account used for storing analysis artifacts. | `string` | `""` | no |
