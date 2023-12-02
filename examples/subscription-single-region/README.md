@@ -19,7 +19,7 @@ terraform {
 ```hcl
 // Create resources including lacework cloud integration in one region
 module "lacework_azure_agentless_scanning_subscription_us_west" {
-  source = "../.."
+  source = "lacework/agentless-scanning/azure"
 
   integration_level              = "SUBSCRIPTION"
   global                         = true

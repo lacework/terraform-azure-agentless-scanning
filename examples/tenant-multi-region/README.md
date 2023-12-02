@@ -31,7 +31,7 @@ terraform {
 // Create global resources, includes lacework cloud integration.
 // This will also create regional resources too.
 module "lacework_azure_agentless_scanning_tenant_us_west" {
-  source = "../.."
+  source = "lacework/agentless-scanning/azure"
 
   integration_level              = "TENANT"
   global                         = true
@@ -40,7 +40,7 @@ module "lacework_azure_agentless_scanning_tenant_us_west" {
 }
 
 module "lacework_azure_agentless_scanning_single_tenant_us_east" {
-  source = "../.."
+  source = "lacework/agentless-scanning/azure"
 
   integration_level              = "TENANT"
   global                         = false

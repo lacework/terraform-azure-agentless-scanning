@@ -73,13 +73,13 @@ variable "custom_network" {
 
 variable "region" {
   type        = string
-  default     = "West US 2"
+  default     = "westus2"
   description = "The region where LW scanner is deployed to"
 }
 
 variable "notification_email" {
   type        = string
-  default     = "ao.zhang@lacework.net"
+  default     = ""
   description = "Used for receiving notification on key updates such as those to service principal"
 }
 
@@ -176,7 +176,7 @@ This section defines variables used for initiating scanning
 
 variable "integration_level" {
   type        = string
-  description = "If we are integrating into a subscription or tenant. Valid values are 'subscription' or 'tenant'"
+  description = "If we are integrating into a subscription or tenant. Valid values are 'SUBSCRIPTION' or 'TENANT'"
   validation {
     condition     = upper(var.integration_level) == "SUBSCRIPTION" || upper(var.integration_level) == "TENANT"
     error_message = "Valid values are 'SUBSCRIPTION' or 'TENANT'."

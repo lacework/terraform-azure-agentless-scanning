@@ -82,7 +82,7 @@ resource "azurerm_virtual_network" "example" {
 
 /* create Lacework agentless integration within the custom setup */
 module "lacework_azure_agentless_scanning_rg_and_vnet" {
-  source = "../.."
+  source = "lacework/agentless-scanning/azure"
 
   integration_level              = "SUBSCRIPTION"
   global             = true
