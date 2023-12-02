@@ -218,7 +218,7 @@ resource "azuread_service_principal" "data_loader" {
   app_role_assignment_required = true
   use_existing                 = true
   owners                       = local.owners
-  notification_email_addresses = [var.notification_email]
+  notification_email_addresses = length(var.notification_email) > 0 ? [var.notification_email] : []
   notes                        = "Used by Lacework data_loader to transfer analysis artifacts to Lacework"
 }
 
