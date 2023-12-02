@@ -489,7 +489,7 @@ resource "azapi_resource" "container_app_job_agentless" {
   ]
 
   type = "Microsoft.App/jobs@2023-05-01"
-  name = lower(replace("${var.prefix}-trigger-${local.region}-${local.suffix}", " ", "-"))
+  name = lower(replace("${var.prefix}-${local.region}-${local.suffix}", " ", "-"))
   identity {
     type         = "UserAssigned"
     identity_ids = [local.sidekick_principal_name_fully_qualified]
