@@ -20,7 +20,7 @@ variable "lacework_domain" {
 variable "prefix" {
   type        = string
   description = "A string to be prefixed to the name of all new resources."
-  default     = "lacework"
+  default     = "lw"
 
   validation {
     condition     = length(regexall(".*lacework.*", var.prefix)) > 0

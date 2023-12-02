@@ -86,7 +86,7 @@ No modules.
 | <a name="input_lacework_integration_name"></a> [lacework\_integration\_name](#input\_lacework\_integration\_name) | The name of the Lacework cloud account integration. | `string` | `"azure-agentless-scanning"` | no |
 | <a name="input_notification_email"></a> [notification\_email](#input\_notification\_email) | Used for receiving notification on key updates such as those to service principal | `string` | `""` | no |
 | <a name="input_owner_id"></a> [owner\_id](#input\_owner\_id) | Owner for service account created. Azure recommends having one | `string` | `""` | no |
-| <a name="input_prefix"></a> [prefix](#input\_prefix) | A string to be prefixed to the name of all new resources. | `string` | `"lacework"` | no |
+| <a name="input_prefix"></a> [prefix](#input\_prefix) | A string to be prefixed to the name of all new resources. | `string` | `"lw"` | no |
 | <a name="input_region"></a> [region](#input\_region) | The region where LW scanner is deployed to | `string` | `"westus2"` | no |
 | <a name="input_regional"></a> [regional](#input\_regional) | Whether or not to create regional resources. Defaults to `true`. | `bool` | `true` | no |
 | <a name="input_scan_containers"></a> [scan\_containers](#input\_scan\_containers) | Whether to includes scanning for containers.  Defaults to `true`. | `bool` | `true` | no |
