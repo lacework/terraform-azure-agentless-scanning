@@ -1,3 +1,8 @@
+# v0.1.1
+
+## Other Changes
+* ci: version bump to v0.1.1-dev (Lacework)([778b510](https://github.com/lacework/terraform-azure-agentless-scanning/commit/778b5109891553f2947d49f9f3f43b76a8bb92b6))
+---
 # v0.1.0
 
 ## Features
@@ -25,4 +30,3 @@
 * ci: sign lacework-releng commits (#4) (Salim Afiune)([1627168](https://github.com/lacework/terraform-azure-agentless-scanning/commit/1627168af9b5494764897183fec56b78e8aee22f))
 * ci: fix finding major versions during release (#2) (Salim Afiune)([5034a05](https://github.com/lacework/terraform-azure-agentless-scanning/commit/5034a05f1e484b458c71bca96a0e874f23c9f3a9))
 ---
-
