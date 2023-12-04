@@ -51,6 +51,9 @@ resource "azurerm_role_definition" "agentless_scanning_subscription" {
       "Microsoft.Storage/storageAccounts/read",
       "Microsoft.ManagedIdentity/userAssignedIdentities/*/read",
       "Microsoft.ManagedIdentity/userAssignedIdentities/*/assign/action",
+      "Microsoft.Network/publicIPAddresses/join/action",
+      "Microsoft.Network/publicIPAddresses/read",
+      "Microsoft.Network/publicIPAddresses/write",
     ]
     not_actions = []
   }
