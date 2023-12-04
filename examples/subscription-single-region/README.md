@@ -25,5 +25,7 @@ module "lacework_azure_agentless_scanning_subscription_us_west" {
   global                         = true
   create_log_analytics_workspace = true
   region                         = "West US"
+  scanning_subscription_id       = "abcd-1234"
+  tenant_id                      = "efgh-5678"
 }
 ```
