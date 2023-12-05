@@ -31,5 +31,7 @@ module "lacework_azure_agentless_scanning_single_tenant" {
   create_log_analytics_workspace = true
   integration_level              = "tenant"
   tags                           = { "lw-example-tf" : "true" }
+  scanning_subscription_id       = "abcd-1234"
+  tenant_id                      = "efgh-5678"
 }
 ```

@@ -85,9 +85,11 @@ module "lacework_azure_agentless_scanning_rg_and_vnet" {
   source = "lacework/agentless-scanning/azure"
 
   integration_level              = "SUBSCRIPTION"
-  global             = true
-  custom_network                 = "" // tolist(azurerm_virtual_network.example.subnet)[0].id
+  global                         = true
+  custom_network                 = tolist(azurerm_virtual_network.example.subnet)[0].id
   create_log_analytics_workspace = true
   region                         = local.region
+  scanning_subscription_id       = "abcd-1234"
+  tenant_id                      = "efgh-5678"
 }
 ```
