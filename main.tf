@@ -356,7 +356,11 @@ resource "azurerm_storage_account" "scanning" {
   location            = local.region
   account_tier        = "Standard"
   # Locally redundant (redundancy in primary region). The cheapest
-  account_replication_type = "LRS"
+  account_replication_type          = "LRS"
+  infrastructure_encryption_enabled = var.enable_storage_infrastructure_encryption
+  allow_nested_items_to_be_public   = false
+  min_tls_version                   = "TLS1_2"
+  enable_https_traffic_only         = true
 
   tags = var.tags
 }
