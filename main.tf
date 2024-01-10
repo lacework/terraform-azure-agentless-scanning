@@ -100,6 +100,7 @@ locals {
     AZURE_CLIENT_ID                   = local.sidekick_client_id
     AZURE_KEY_VAULT_SECRET_NAME       = local.key_vault_secret_name
     AZURE_KEY_VAULT_URI               = local.key_vault_uri
+    AZURE_CONTAINER_REGION            = local.container_region
   }
   environment_variables_as_list = [for key, val in local.environment_variables : { name = key, value = val }]
 
@@ -123,6 +124,14 @@ locals {
 
   region            = lower(replace(var.region, " ", ""))
   integration_level = upper(var.integration_level)
+
+  /* Azure Container App is not available in some region, so we'll need to deploy it to an alternative region */
+  unsupported_region_replacements = {
+    australiacentral   = "australiaeast"
+    australiacentral2  = "australiaeast"
+    australiasoutheast = "australiaeast"
+  }
+  container_region = lookup(local.unsupported_region_replacements, local.region, local.region)
 }
 
 /* When we are doing a non-global/regional deployment, we expect some global resources 
@@ -475,7 +484,7 @@ resource "azurerm_container_app_environment" "agentless_orchestrate" {
   count      = var.regional ? 1 : 0
 
   name                       = replace("${local.prefix}-service-${local.region}-${local.suffix}", " ", "-")
-  location                   = local.region
+  location                   = local.container_region
   resource_group_name        = local.scanning_resource_group_name
   tags                       = var.tags
   log_analytics_workspace_id = var.create_log_analytics_workspace ? azurerm_log_analytics_workspace.agentless_orchestrate[0].id : null
@@ -499,7 +508,8 @@ resource "azapi_resource" "container_app_job_agentless" {
     identity_ids = [local.sidekick_principal_name_fully_qualified]
   }
 
-  location  = local.region
+  /* Deploy to alternative region if the current region is unsupported */
+  location  = local.container_region
   parent_id = var.global ? azurerm_resource_group.scanning_rg[0].id : data.azurerm_resource_group.scanning_rg[0].id
   tags      = var.tags
 
