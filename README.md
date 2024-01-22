@@ -16,7 +16,7 @@ All code contributions made by Lacework customers to this repo are considered â€
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13 |
 | <a name="requirement_azuread"></a> [azuread](#requirement\_azuread) | ~> 2.45.0 |
 | <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 3.77.0 |
-| <a name="requirement_lacework"></a> [lacework](#requirement\_lacework) | >= 1.17 |
+| <a name="requirement_lacework"></a> [lacework](#requirement\_lacework) | >= 1.18 |
 
 ## Providers
 
@@ -25,7 +25,7 @@ All code contributions made by Lacework customers to this repo are considered â€
 | <a name="provider_azapi"></a> [azapi](#provider\_azapi) | n/a |
 | <a name="provider_azuread"></a> [azuread](#provider\_azuread) | ~> 2.45.0 |
 | <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 3.77.0 |
-| <a name="provider_lacework"></a> [lacework](#provider\_lacework) | >= 1.17 |
+| <a name="provider_lacework"></a> [lacework](#provider\_lacework) | >= 1.18 |
 | <a name="provider_random"></a> [random](#provider\_random) | n/a |
 
 ## Modules
@@ -66,6 +66,7 @@ No modules.
 | [azurerm_resource_group.scanning_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/resource_group) | data source |
 | [azurerm_subscription.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/subscription) | data source |
 | [azurerm_subscriptions.available](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/subscriptions) | data source |
+| [lacework_metric_module.lwmetrics](https://registry.terraform.io/providers/lacework/lacework/latest/docs/data-sources/metric_module) | data source |
 | [lacework_user_profile.current](https://registry.terraform.io/providers/lacework/lacework/latest/docs/data-sources/user_profile) | data source |
 
 ## Inputs

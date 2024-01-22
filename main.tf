@@ -123,6 +123,10 @@ locals {
 
   region            = lower(replace(var.region, " ", ""))
   integration_level = upper(var.integration_level)
+
+  version_file   = "${abspath(path.module)}/VERSION"
+  module_name    = basename(abspath(path.module))
+  module_version = fileexists(local.version_file) ? file(local.version_file) : ""
 }
 
 /* When we are doing a non-global/regional deployment, we expect some global resources 
@@ -532,4 +536,9 @@ resource "azapi_resource" "container_app_job_agentless" {
       }
     }
   })
+}
+
+data "lacework_metric_module" "lwmetrics" {
+  name    = local.module_name
+  version = local.module_version
 }
