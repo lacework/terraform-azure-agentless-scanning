@@ -100,6 +100,10 @@ locals {
     AZURE_CLIENT_ID                   = local.sidekick_client_id
     AZURE_KEY_VAULT_SECRET_NAME       = local.key_vault_secret_name
     AZURE_KEY_VAULT_URI               = local.key_vault_uri
+
+  version_file   = "${abspath(path.module)}/VERSION"
+  module_name    = basename(abspath(path.module))
+  module_version = fileexists(local.version_file) ? file(local.version_file) : ""
   }
   environment_variables_as_list = [for key, val in local.environment_variables : { name = key, value = val }]
 
@@ -532,4 +536,9 @@ resource "azapi_resource" "container_app_job_agentless" {
       }
     }
   })
+}
+
+data "lacework_metric_module" "lwmetrics" {
+  name    = local.module_name
+  version = local.module_version
 }
