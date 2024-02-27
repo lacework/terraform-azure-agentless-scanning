@@ -13,6 +13,12 @@ resource "azurerm_role_definition" "agentless_monitored_subscription" {
       "Microsoft.Compute/disks/beginGetAccess/action",
       "Microsoft.Compute/virtualMachines/instanceView/read",
       "Microsoft.Compute/virtualMachines/read",
+      "Microsoft.Compute/snapshots/read",
+      "Microsoft.Compute/snapshots/write",
+      "Microsoft.Compute/snapshots/delete",
+      "Microsoft.Compute/snapshots/beginGetAccess/action",
+      "Microsoft.Compute/snapshots/endGetAccess/action",
+      "Microsoft.Resources/subscriptions/resourceGroups/read",
     ]
     not_actions = []
   }
