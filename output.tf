@@ -83,3 +83,8 @@ output "sidekick_principal_id" {
   value       = local.sidekick_principal_id
   description = "The principal id of the user identity used by agentless scanner"
 }
+
+output "subscriptions_list" {
+  value = local.subscriptions_list_local
+  description = "The subscriptions list in global module reference"
+}
