@@ -65,9 +65,10 @@ locals {
   storage_account_url  = length(var.storage_account_url) > 0 ? var.storage_account_url : "https://${local.storage_account_name}.blob.core.windows.net"
   storage_account_id   = var.global ? azurerm_storage_account.scanning[0].id : var.global_module_reference.storage_account_id
 
-  provided_subscriptions_list = [for sub in var.subscriptions_list : sub if !(substr(sub, 0, 1) == "-")]
+  subscriptions_list_local = var.global ? var.subscriptions_list : var.global_module_reference.subscriptions_list
+  provided_subscriptions_list = [for sub in local.subscriptions_list_local : sub if !(substr(sub, 0, 1) == "-")]
   /* if subscription list is provided, use it, otherwise, use all available subscriptions minus excluded subscriptions */
-  excluded_subscriptions_list = [for sub in var.subscriptions_list : trimprefix(sub, "-") if(substr(sub, 0, 1) == "-")]
+  excluded_subscriptions_list = [for sub in local.subscriptions_list_local : trimprefix(sub, "-") if(substr(sub, 0, 1) == "-")]
   included_subscriptions_list = local.integration_level == "TENANT" ? (
     length(local.provided_subscriptions_list) > 0 ? local.provided_subscriptions_list : tolist(setsubtract(
       toset([for sub in data.azurerm_subscriptions.available.subscriptions : sub.id]), /* all available subscriptions */

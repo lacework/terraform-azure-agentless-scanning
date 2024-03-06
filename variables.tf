@@ -214,9 +214,10 @@ variable "create_log_analytics_workspace" {
 Define what resources should be monitored/scanned 
 */
 
+/* TODO: add a check that the subscriptions_list is not set for non-global resources */
 variable "subscriptions_list" {
   type        = set(string)
-  description = "List of subscriptions to be scanned. Prefix a subscription with '-' to exclude it from scanning."
+  description = "List of subscriptions to be scanned. Prefix a subscription with '-' to exclude it from scanning. Set only for global resource"
   default     = []
   validation {
     condition     = alltrue([for sub in var.subscriptions_list : can(regex("^-?/subscriptions/.*", sub))])
@@ -277,6 +278,7 @@ variable "global_module_reference" {
     scanning_subscription_role_definition_id  = string
     sidekick_principal_id                     = string
     sidekick_client_id                        = string
+    subscriptions_list                        = set(string)
   })
   default = {
     scanning_resource_group_name              = ""
@@ -294,6 +296,7 @@ variable "global_module_reference" {
     scanning_subscription_role_definition_id  = ""
     sidekick_principal_id                     = ""
     sidekick_client_id                        = ""
+    subscriptions_list                        = []
   }
   description = "A reference to the global lacework_azure_agentless_scanning module for this account."
 }
