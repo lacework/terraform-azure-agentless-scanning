@@ -4,9 +4,10 @@ variable "lacework_account" {
   default     = ""
 }
 
+/* TODO: check that this is not set in regional resource */
 variable "lacework_integration_name" {
   type        = string
-  description = "The name of the Lacework cloud account integration."
+  description = "The name of the Lacework cloud account integration. Should only be set in global resource"
   default     = "azure-agentless-scanning"
 }
 
@@ -269,6 +270,7 @@ variable "global_module_reference" {
     key_vault_secret_name                     = string
     lacework_account                          = string
     lacework_domain                           = string
+    lacework_integration_name                 = string
     storage_account_name                      = string
     storage_account_id                        = string
     blob_container_name                       = string
@@ -287,6 +289,7 @@ variable "global_module_reference" {
     key_vault_secret_name                     = ""
     lacework_account                          = ""
     lacework_domain                           = ""
+    lacework_integration_name                 = ""
     storage_account_name                      = ""
     storage_account_id                        = ""
     blob_container_name                       = ""

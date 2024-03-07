@@ -124,6 +124,7 @@ locals {
 
   region            = lower(replace(var.region, " ", ""))
   integration_level = upper(var.integration_level)
+  lacework_integration_name_local = var.global ? var.lacework_integration_name : var.global_module_reference.lacework_integration_name
 
   version_file   = "${abspath(path.module)}/VERSION"
   module_name    = "terraform-azure-agentless-scanning"
@@ -182,7 +183,7 @@ resource "lacework_integration_azure_agentless_scanning" "lacework_cloud_account
     azurerm_storage_container.scanning,
   ]
 
-  name = var.lacework_integration_name
+  name = local.lacework_integration_name_local
   credentials {
     client_id     = azuread_application.lw[0].client_id
     client_secret = azuread_service_principal_password.data_loader[0].value

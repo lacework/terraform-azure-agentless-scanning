@@ -59,6 +59,11 @@ output "lacework_domain" {
   description = "Lacework Domain Name for Integration."
 }
 
+output "lacework_integration_name" {
+  value       = local.lacework_integration_name_local
+  description = "The name of the integration. Passed along in global module reference."
+}
+
 output "prefix" {
   value       = var.prefix
   description = "Prefix used to add uniqueness to resource names."
