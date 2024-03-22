@@ -17,7 +17,7 @@ jobs:
     - name: store hash of new README.md
       id: new_hash
       run: echo "README_HASH=$(md5sum README.md)" >> $GITHUB_OUTPUT
-    - name: echo hashes
+    - name: echo hashes 
       run: |
         echo ${{ steps.old_hash.outputs.README_HASH }}
         echo ${{ steps.new_hash.outputs.README_HASH }}
