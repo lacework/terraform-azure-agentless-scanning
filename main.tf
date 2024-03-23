@@ -131,30 +131,6 @@ locals {
   module_version = fileexists(local.version_file) ? file(local.version_file) : ""
 }
 
-/* When we are doing a non-global/regional deployment, we expect some global resources 
-to have been created. One way to check that is to ensure we can reference them via
-the global_module_reference attribute.
-TODO: Unfortunately this wouldn't work because the `check` predicate is only supported after 
-TF 1.5 but we need to be backward compatible. We should uncomment this once Terraform major 
-version is upgraded.
-*/
-/* check "check_global_resource_condition" {
-  assert {
-    condition = var.global || (
-      length(var.global_module_reference.storage_account_id) > 0 &&
-      length(var.global_module_reference.scanning_subscription_role_definition_id) > 0 &&
-      length(var.global_module_reference.monitored_subscription_role_definition_id) > 0 &&
-      length(var.global_module_reference.blob_container_name) > 0 &&
-      length(var.global_module_reference.key_vault_id) > 0 &&
-      length(var.global_module_reference.sidekick_principal_id) > 0 &&
-      length(var.global_module_reference.sidekick_client_id) > 0 &&
-      length(var.global_module_reference.key_vault_secret_name) > 0 &&
-      length(var.global_module_reference.key_vault_uri) > 0
-    )
-    error_message = "Some resources have not been referenced correctly during a non-global deployment"
-  }
-}
- */
 resource "random_id" "uniq" {
   byte_length = 2
 }
