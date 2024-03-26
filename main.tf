@@ -102,7 +102,8 @@ locals {
     AZURE_KEY_VAULT_SECRET_NAME       = local.key_vault_secret_name
     AZURE_KEY_VAULT_URI               = local.key_vault_uri
   }
-  environment_variables_as_list = [for key, val in local.environment_variables : { name = key, value = val }]
+  environment_variables_as_list =  concat([for key, val in local.environment_variables : { name = key, value = val }],
+   [for obj in var.additional_environment_variables : { name = obj["name"], value = obj["value"] }])
 
   key_vault_id = var.global ? azurerm_key_vault.lw_orchestrate[0].id : (
     length(var.global_module_reference.key_vault_id) > 0 ? var.global_module_reference.key_vault_id : var.key_vault_id

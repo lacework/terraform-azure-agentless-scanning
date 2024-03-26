@@ -303,3 +303,12 @@ variable "global_module_reference" {
   }
   description = "A reference to the global lacework_azure_agentless_scanning module for this account."
 }
+
+variable "additional_environment_variables" {
+  type = list(object({
+    name  = string
+    value = string
+  }))
+  default     = []
+  description = "Optional list of additional environment variables passed to the task."
+}
