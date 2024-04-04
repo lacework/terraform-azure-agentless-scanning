@@ -254,6 +254,11 @@ variable "enable_storage_infrastructure_encryption" {
   default     = false
 }
 
+variable "execute_now" { 
+  type = bool
+  description = "execute newly created job(s) immediately after deployment"
+  default = true
+}
 /* **************** End Storage Section **************** */
 
 variable "filter_query_text" {
