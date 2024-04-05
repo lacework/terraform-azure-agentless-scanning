@@ -518,14 +518,14 @@ resource "azapi_resource" "container_app_job_agentless" {
 }
 
 # Trigger execution, if requested
-resource "null_resource" "job_execution_now" {
+resource "terraform_data" "job_execution_now" {
   count = var.execute_now && var.regional ? 1 : 0
 
   provisioner "local-exec" {
     command = "az containerapp job start --name ${azapi_resource.container_app_job_agentless[0].name} --resource-group ${local.scanning_resource_group_name}"
   }
 
-  triggers = {
+  triggers_replace = {
     always_run = timestamp()
   }
 
