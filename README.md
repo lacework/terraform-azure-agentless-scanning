@@ -26,7 +26,6 @@ All code contributions made by Lacework customers to this repo are considered â€
 | <a name="provider_azuread"></a> [azuread](#provider\_azuread) | ~> 2.45.0 |
 | <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 3.77.0 |
 | <a name="provider_lacework"></a> [lacework](#provider\_lacework) | >= 1.18 |
-| <a name="provider_null"></a> [null](#provider\_null) | n/a |
 | <a name="provider_random"></a> [random](#provider\_random) | n/a |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
@@ -63,7 +62,6 @@ No modules.
 | [azurerm_user_assigned_identity.sidekick](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) | resource |
 | [azurerm_virtual_network.agentless_orchestrate](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) | resource |
 | [lacework_integration_azure_agentless_scanning.lacework_cloud_account](https://registry.terraform.io/providers/lacework/lacework/latest/docs/resources/integration_azure_agentless_scanning) | resource |
-| [null_resource.job_execution_now](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [random_id.uniq](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) | resource |
 | [terraform_data.job_execution_now](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
 | [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) | data source |
