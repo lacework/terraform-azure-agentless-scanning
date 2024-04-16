@@ -130,6 +130,8 @@ locals {
   version_file   = "${abspath(path.module)}/VERSION"
   module_name    = "terraform-azure-agentless-scanning"
   module_version = fileexists(local.version_file) ? file(local.version_file) : ""
+
+  scanning_rg_id = var.global ? "" : var.global_module_reference.scanning_resource_group_id
 }
 
 resource "random_id" "uniq" {
@@ -145,6 +147,11 @@ resource "azurerm_resource_group" "scanning_rg" {
 
 data "azurerm_resource_group" "scanning_rg" {
   count = var.global ? 0 : 1
+  depends_on = [
+    # This is here to enforce that non-global modules are created after the global module
+    # We can't do a normal `depends_on` because it wouldn't account for dependencies between modules
+    local.scanning_rg_id
+  ]
 
   name = local.scanning_resource_group_name
 }

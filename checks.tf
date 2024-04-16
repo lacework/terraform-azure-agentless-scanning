@@ -17,7 +17,8 @@ check "check_global_resource_condition" {
       length(var.global_module_reference.sidekick_principal_id) > 0 &&
       length(var.global_module_reference.sidekick_client_id) > 0 &&
       length(var.global_module_reference.key_vault_secret_name) > 0 &&
-      length(var.global_module_reference.key_vault_uri) > 0
+      length(var.global_module_reference.key_vault_uri) > 0  && 
+      length(var.global_module_reference.suffix ) > 0
     )
     error_message = "Some resources have not been referenced correctly during a non-global deployment"
   }
