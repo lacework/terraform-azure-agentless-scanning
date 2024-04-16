@@ -8,7 +8,7 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.ref }}
     - name: Install terraform-docs
-      run: curl -L https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-amd64.tar.gz | (cd /usr/local/bin; tar zxvf -; chmod +x /usr/local/bin/terraform-docs)
+      run: curl -L https://github.com/terraform-docs/terraform-docs/releases/download/v0.17.0/terraform-docs-v0.17.0-linux-amd64.tar.gz | (cd /usr/local/bin; tar zxvf -; chmod +x /usr/local/bin/terraform-docs)
     - name: store hash of orig README.md
       id: old_hash
       run: echo "README_HASH=$(md5sum README.md)" >> $GITHUB_OUTPUT
