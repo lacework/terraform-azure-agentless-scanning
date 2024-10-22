@@ -14,17 +14,18 @@ All code contributions made by Lacework customers to this repo are considered â€
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5 |
-| <a name="requirement_azuread"></a> [azuread](#requirement\_azuread) | ~> 2.45.0 |
-| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 3.77.0 |
+| <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) | ~> 1.15.0 |
+| <a name="requirement_azuread"></a> [azuread](#requirement\_azuread) | ~> 2.53.1 |
+| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 3.116.0 |
 | <a name="requirement_lacework"></a> [lacework](#requirement\_lacework) | >= 1.18 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_azapi"></a> [azapi](#provider\_azapi) | n/a |
-| <a name="provider_azuread"></a> [azuread](#provider\_azuread) | ~> 2.45.0 |
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 3.77.0 |
+| <a name="provider_azapi"></a> [azapi](#provider\_azapi) | ~> 1.15.0 |
+| <a name="provider_azuread"></a> [azuread](#provider\_azuread) | ~> 2.53.1 |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 3.116.0 |
 | <a name="provider_lacework"></a> [lacework](#provider\_lacework) | >= 1.18 |
 | <a name="provider_random"></a> [random](#provider\_random) | n/a |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
