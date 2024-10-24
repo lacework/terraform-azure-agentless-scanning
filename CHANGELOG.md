@@ -1,6 +1,7 @@
 # v1.2.0
 
 ## Features
+* feat: Updated Azure provider versions (#37) (Japneet Singh)([1e1d649](https://github.com/lacework/terraform-azure-agentless-scanning/pull/37/commits/1e1d6493be2546799a7222bb8916632b7f1ebae7))
 * feat: support regions not supported by Azure (#16) (Ao Zhang)([4e05d59](https://github.com/lacework/terraform-azure-agentless-scanning/commit/4e05d59c6c9184f4dca930a56eec6466abf35727))
 ## Other Changes
 * chore(GROW-2952): add codeowners (#33) (Matt Cadorette)([74d74d8](https://github.com/lacework/terraform-azure-agentless-scanning/commit/74d74d8336cd93a0ab1dfd59fbc3a6121d970ee6))
