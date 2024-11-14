@@ -1,9 +1,6 @@
 # Release Notes
-Another day, another release. These are the release notes for the version `v1.2.0`.
+Another day, another release. These are the release notes for the version `v1.2.1`.
 
-## Features
-* feat: Updated Azure provider versions (#37) (Japneet Singh)([1e1d649](https://github.com/lacework/terraform-azure-agentless-scanning/pull/37/commits/1e1d6493be2546799a7222bb8916632b7f1ebae7))
-* feat: support regions not supported by Azure (#16) (Ao Zhang)([4e05d59](https://github.com/lacework/terraform-azure-agentless-scanning/commit/4e05d59c6c9184f4dca930a56eec6466abf35727))
 ## Other Changes
-* chore(GROW-2952): add codeowners (#33) (Matt Cadorette)([74d74d8](https://github.com/lacework/terraform-azure-agentless-scanning/commit/74d74d8336cd93a0ab1dfd59fbc3a6121d970ee6))
-* ci: version bump to v1.1.3-dev (Lacework)([7e8380f](https://github.com/lacework/terraform-azure-agentless-scanning/commit/7e8380fdd29678e2eda2cae0b79cc8a6823cea59))
+* chore: Update lacework provider dependency to ~>2.0 (Pengyuan Zhao)([2636b25](https://github.com/lacework/terraform-azure-agentless-scanning/commit/2636b2531b8695d4a98b66abbb30936fee0067e7))
+* ci: version bump to v1.2.1-dev (Lacework)([2c85ea2](https://github.com/lacework/terraform-azure-agentless-scanning/commit/2c85ea29a9b528824aaa2332057a2e1b306a845a))
