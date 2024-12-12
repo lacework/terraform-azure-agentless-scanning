@@ -40,12 +40,16 @@ resource "azurerm_role_definition" "agentless_scanning_subscription" {
   permissions {
     actions = [
       "Microsoft.Authorization/*/read",
+      "Microsoft.Billing/billingPeriods/read",	// new
+      "Microsoft.Billing/billingProperty/read", // new
       "Microsoft.Compute/locations/*",
       "Microsoft.Compute/virtualMachines/*",
       "Microsoft.Compute/cloudServices/*",
       "Microsoft.Compute/disks/write",
       "Microsoft.Compute/disks/read",
       "Microsoft.Compute/disks/delete",
+      "Microsoft.Consumption/*/read",	// new
+      "Microsoft.CostManagement/*/read", // new
       "Microsoft.Network/locations/*",
       "Microsoft.Network/networkInterfaces/*",
       "Microsoft.Network/networkSecurityGroups/join/action",
