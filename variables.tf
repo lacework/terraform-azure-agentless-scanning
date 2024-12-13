@@ -60,6 +60,12 @@ variable "tags" {
   description = "Set of tags which will be added to the resources managed by the module."
 }
 
+variable "use_nat_gateway" {
+  type        = bool
+  description = "Whether to use a NAT gateway instead of public IPs on scanning instances. Defaults to `true`."
+  default     = true
+}
+
 variable "custom_network" {
   type        = string
   default     = ""
@@ -69,6 +75,24 @@ variable "custom_network" {
       regex("^/subscriptions/.*/resourceGroups/.*/providers/Microsoft.Network/virtualNetworks/.*/subnets/.*$", var.custom_network)
     )
     error_message = "Incorrectly formatted network input. Use a full Resource ID in this format: /subscriptions/<subscription_id>/resourceGroups/<rg_id>/providers/Microsoft.Network/virtualNetworks/<vnet_id>/subnets/<subnet_id>."
+  }
+}
+
+variable "custom_network_security_group" {
+  type        = string
+  default     = ""
+  description = "The name of the custom Azure Virtual Network security group. Only needed when specifying a custom network and using a NAT gateway."
+  validation {
+    condition = length(var.custom_network_security_group) == 0 || can(
+      regex("^/subscriptions/.*/resourceGroups/.*/providers/Microsoft.Network/networkSecurityGroups/.*$", var.custom_network_security_group)
+    )
+    error_message = "Incorrectly formatted network security group input. Use a full Resource ID in this format: /subscriptions/<subscription_id>/resourceGroups/<rg_id>/providers/Microsoft.Network/networkSecurityGroups/<nsg_id>."
+  }
+  validation {
+    condition     = (length(var.custom_network_security_group) == 0  && length(var.custom_network) == 0) || (
+      length(var.custom_network_security_group) != 0 && length(var.custom_network) != 0 && var.use_nat_gateway == true) || (
+      length(var.custom_network_security_group) == 0 && length(var.custom_network) != 0 && var.use_nat_gateway == false)
+    error_message = "You must specify a custom network security group if using a custom virtual network and a NAT gateway. "
   }
 }
 

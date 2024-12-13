@@ -14,7 +14,7 @@ resource "azurerm_resource_group" "example" {
 }
 
 /* Ensure the subnet allows egress traffic on port 443 or the scanner will break */
-resource "azurerm_network_security_group" "lw" {
+resource "azurerm_network_security_group" "example" {
   depends_on          = [azurerm_resource_group.example]
   name                = "example-nsg"
   location            = local.region
@@ -48,13 +48,23 @@ resource "azurerm_virtual_network" "example" {
 }
 
 
-/* create Lacework agentless integration within the custom setup */
+/* Create Lacework agentless integration within the custom setup. Note that
+the virtual network and other networking resources above must already exist for
+this to succeed. */
 module "lacework_azure_agentless_scanning_rg_and_vnet" {
   source = "../.."
 
   integration_level              = "SUBSCRIPTION"
   global                         = true
-  custom_network                 = "" // tolist(azurerm_virtual_network.example.subnet)[0].id
+  custom_network                 = tolist(azurerm_virtual_network.example.subnet)[0].id
   create_log_analytics_workspace = true
   region                         = local.region
+
+  // When using a custom vnet with the default NAT gateway (use_nat_gateway = true),
+  // you must specify the network security group here:
+  custom_network_security_group = azurerm_network_security_group.example.id
+  
+  // If you want to use public IPs instead of a NAT gateway, comment out the line above
+  // and uncomment this line:
+  // use_nat_gateway = false
 }
