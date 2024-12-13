@@ -46,7 +46,7 @@ resource "azurerm_role_definition" "agentless_scanning_subscription" {
       "Microsoft.Compute/disks/write",
       "Microsoft.Compute/disks/read",
       "Microsoft.Compute/disks/delete",
-      "Microsoft.CostManagement/*/read", // new
+      "Microsoft.CostManagement/*/read", 
       "Microsoft.Network/locations/*",
       "Microsoft.Network/networkInterfaces/*",
       "Microsoft.Network/networkSecurityGroups/join/action",
