@@ -1,6 +1,9 @@
 # Release Notes
-Another day, another release. These are the release notes for the version `v1.2.1`.
+Another day, another release. These are the release notes for the version `v1.3.0`.
 
+## Features
+* feat(AWLS2-353): remove unnecessary comment (Joe Wilder)([e430566](https://github.com/lacework/terraform-azure-agentless-scanning/commit/e4305666db47721f702210e3be9feda4a81f9c35))
+* feat(AWLS2-353): try to scope down permissions (Joe Wilder)([eeb9f29](https://github.com/lacework/terraform-azure-agentless-scanning/commit/eeb9f29d38fb783be88381cabee6dad99515969d))
+* feat(AWLS2-353): update role for cost estimation permissions (Joe Wilder)([00775e0](https://github.com/lacework/terraform-azure-agentless-scanning/commit/00775e05487ab050c7b627509482a3490d81b6ed))
 ## Other Changes
-* chore: Update lacework provider dependency to ~>2.0 (Pengyuan Zhao)([2636b25](https://github.com/lacework/terraform-azure-agentless-scanning/commit/2636b2531b8695d4a98b66abbb30936fee0067e7))
-* ci: version bump to v1.2.1-dev (Lacework)([2c85ea2](https://github.com/lacework/terraform-azure-agentless-scanning/commit/2c85ea29a9b528824aaa2332057a2e1b306a845a))
+* ci: version bump to v1.2.2-dev (Lacework)([087dc6a](https://github.com/lacework/terraform-azure-agentless-scanning/commit/087dc6ab76e405cb98bb0eb9c4497387ca5f8658))
