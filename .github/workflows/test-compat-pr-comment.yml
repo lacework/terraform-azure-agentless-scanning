@@ -28,4 +28,4 @@ jobs:
     uses: lacework/oss-actions/.github/workflows/tf-test-compatibility.yml@main
     secrets: inherit
     with:
-      min-version: 1.5
+      min-version: 1.9
