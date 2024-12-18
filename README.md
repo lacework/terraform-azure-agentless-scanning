@@ -13,7 +13,7 @@ All code contributions made by Lacework customers to this repo are considered â€
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.9 |
 | <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) | ~> 1.15.0 |
 | <a name="requirement_azuread"></a> [azuread](#requirement\_azuread) | ~> 2.53.1 |
 | <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 3.116.0 |
@@ -48,7 +48,10 @@ No modules.
 | [azurerm_key_vault_access_policy.access_for_user](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) | resource |
 | [azurerm_key_vault_secret.lw_orchestrate](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) | resource |
 | [azurerm_log_analytics_workspace.agentless_orchestrate](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) | resource |
+| [azurerm_nat_gateway.agentless_nat_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/nat_gateway) | resource |
+| [azurerm_nat_gateway_public_ip_association.agentless_ip_association](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/nat_gateway_public_ip_association) | resource |
 | [azurerm_network_security_group.agentless_orchestrate](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) | resource |
+| [azurerm_public_ip.agentless_public_ip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) | resource |
 | [azurerm_resource_group.scanning_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) | resource |
 | [azurerm_role_assignment.key_vault_sidekick](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
 | [azurerm_role_assignment.key_vault_user](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
@@ -60,6 +63,9 @@ No modules.
 | [azurerm_role_definition.agentless_scanning_subscription](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_definition) | resource |
 | [azurerm_storage_account.scanning](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) | resource |
 | [azurerm_storage_container.scanning](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_container) | resource |
+| [azurerm_subnet.agentless_subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) | resource |
+| [azurerm_subnet_nat_gateway_association.agentless_nat_gateway_association](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_nat_gateway_association) | resource |
+| [azurerm_subnet_network_security_group_association.agentless_nsg_association](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_network_security_group_association) | resource |
 | [azurerm_user_assigned_identity.sidekick](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) | resource |
 | [azurerm_virtual_network.agentless_orchestrate](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) | resource |
 | [lacework_integration_azure_agentless_scanning.lacework_cloud_account](https://registry.terraform.io/providers/lacework/lacework/latest/docs/resources/integration_azure_agentless_scanning) | resource |
@@ -80,6 +86,7 @@ No modules.
 | <a name="input_blob_container_name"></a> [blob\_container\_name](#input\_blob\_container\_name) | name of the blob container used for storing analysis artifacts. Leave blank to generate one | `string` | `""` | no |
 | <a name="input_create_log_analytics_workspace"></a> [create\_log\_analytics\_workspace](#input\_create\_log\_analytics\_workspace) | Creates a log analytics workspace to see container logs. Defaults to false to avoid charging | `bool` | `false` | no |
 | <a name="input_custom_network"></a> [custom\_network](#input\_custom\_network) | The name of the custom Azure Virtual Network subnet. Make sure it allows egress traffic on port 443. Leave empty to create a new one. | `string` | `""` | no |
+| <a name="input_custom_network_security_group"></a> [custom\_network\_security\_group](#input\_custom\_network\_security\_group) | The name of the custom Azure Virtual Network security group. Only needed when specifying a custom network and using a NAT gateway. | `string` | `""` | no |
 | <a name="input_enable_storage_infrastructure_encryption"></a> [enable\_storage\_infrastructure\_encryption](#input\_enable\_storage\_infrastructure\_encryption) | enable Azure storage account-level infrastructure encryption. Defaults to false | `bool` | `false` | no |
 | <a name="input_execute_now"></a> [execute\_now](#input\_execute\_now) | execute newly created job(s) immediately after deployment | `bool` | `true` | no |
 | <a name="input_filter_query_text"></a> [filter\_query\_text](#input\_filter\_query\_text) | The LQL query to constrain the scanning to specific resources. If left blank, Lacework will scan all resources available to the account or organization. For more information, see [Limit Scanned Workloads](https://docs.lacework.net/onboarding/lacework-console-agentless-workload-scanning#aws---limit-scanned-workloads). | `string` | `""` | no |
@@ -108,6 +115,7 @@ No modules.
 | <a name="input_suffix"></a> [suffix](#input\_suffix) | A string to be appended to the end of the name of all new resources. | `string` | `""` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Set of tags which will be added to the resources managed by the module. | `map(string)` | `{}` | no |
 | <a name="input_tenant_id"></a> [tenant\_id](#input\_tenant\_id) | TenantId where LW Sidekick is deployed | `string` | `""` | no |
+| <a name="input_use_nat_gateway"></a> [use\_nat\_gateway](#input\_use\_nat\_gateway) | Whether to use a NAT gateway instead of public IPs on scanning instances. Defaults to `true`. | `bool` | `true` | no |
 
 ## Outputs
 

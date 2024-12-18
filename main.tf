@@ -102,6 +102,7 @@ locals {
     AZURE_KEY_VAULT_SECRET_NAME       = local.key_vault_secret_name
     AZURE_KEY_VAULT_URI               = local.key_vault_uri
     AZURE_CONTAINER_REGION            = local.container_region
+    USE_PUBLIC_IPS                    = local.use_public_ips
   }
   environment_variables_as_list =  concat([for key, val in local.environment_variables : { name = key, value = val }],
    [for obj in var.additional_environment_variables : { name = obj["name"], value = obj["value"] }])
@@ -122,7 +123,7 @@ locals {
 
   sidekick_client_id = var.global ? azurerm_user_assigned_identity.sidekick[0].client_id : var.global_module_reference.sidekick_client_id
 
-  custom_network = length(var.custom_network) > 0 ? var.custom_network : (var.regional ? tolist(azurerm_virtual_network.agentless_orchestrate[0].subnet)[0].id : "")
+  custom_network = length(var.custom_network) > 0 ? var.custom_network : (var.regional ? azurerm_subnet.agentless_subnet[0].id : "")
 
   region            = lower(replace(var.region, " ", ""))
   integration_level = upper(var.integration_level)
@@ -141,6 +142,7 @@ locals {
     australiasoutheast = "australiaeast"
   }
   container_region = lookup(local.unsupported_region_replacements, local.region, local.region)
+  use_public_ips = var.use_nat_gateway ? "false" : "true"
 }
 
 resource "random_id" "uniq" {
@@ -421,6 +423,11 @@ resource "azurerm_role_assignment" "orchestrate" {
 
 /* **************** End Scanning **************** */
 
+/* **************** Networking **************** 
+Define regional networking resources. Includes deployment of a new virtual network
+and NAT gateway -- both of which are optional. 
+*/
+
 resource "azurerm_network_security_group" "agentless_orchestrate" {
   depends_on = [azurerm_resource_group.scanning_rg]
   count      = var.regional && length(var.custom_network) == 0 ? 1 : 0
@@ -440,6 +447,8 @@ resource "azurerm_network_security_group" "agentless_orchestrate" {
     source_address_prefix      = "*"
     destination_address_prefix = "Internet"
   }
+
+  tags = var.tags
 }
 
 resource "azurerm_virtual_network" "agentless_orchestrate" {
@@ -451,12 +460,65 @@ resource "azurerm_virtual_network" "agentless_orchestrate" {
   resource_group_name = local.scanning_resource_group_name
   address_space       = ["10.0.0.0/16"]
 
-  subnet {
-    name           = length(var.custom_network) > 0 ? "" : lower(replace("${local.prefix}-subnet-${local.suffix}-${local.region}", " ", ""))
-    address_prefix = "10.0.0.0/16"
-    security_group = azurerm_network_security_group.agentless_orchestrate[0].id
-  }
+  tags = var.tags
 }
+
+resource "azurerm_subnet" "agentless_subnet" {
+  depends_on = [azurerm_resource_group.scanning_rg]
+  count      = var.regional && length(var.custom_network) == 0 ? 1 : 0
+
+  name                 = lower(replace("${local.prefix}-subnet-${local.suffix}-${local.region}", " ", ""))
+  resource_group_name  = local.scanning_resource_group_name
+  virtual_network_name = azurerm_virtual_network.agentless_orchestrate[0].name
+  address_prefixes     = ["10.0.0.0/16"]
+}
+
+resource "azurerm_subnet_network_security_group_association" "agentless_nsg_association" {
+  count = var.regional && length(var.custom_network) == 0 ? 1 : 0
+
+  subnet_id                 = azurerm_subnet.agentless_subnet[0].id
+  network_security_group_id = length(var.custom_network_security_group) > 0 ? var.custom_network_security_group: azurerm_network_security_group.agentless_orchestrate[0].id
+}
+
+resource "azurerm_public_ip" "agentless_public_ip" {
+  depends_on = [azurerm_resource_group.scanning_rg]
+  count = var.regional && var.use_nat_gateway ? 1 : 0
+
+  name                = replace("${local.prefix}-public-ip-${local.region}-${local.suffix}", " ", "-")
+  location            = local.region
+  resource_group_name = local.scanning_resource_group_name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+
+  tags = var.tags
+}
+
+resource "azurerm_nat_gateway" "agentless_nat_gateway" {
+  depends_on = [azurerm_resource_group.scanning_rg]
+  count = var.regional && var.use_nat_gateway ? 1 : 0
+
+  name                    = replace("${local.prefix}-nat-gateway-${local.region}-${local.suffix}", " ", "-")
+  location                = local.region
+  resource_group_name     = local.scanning_resource_group_name
+
+  tags = var.tags
+}
+
+resource "azurerm_nat_gateway_public_ip_association" "agentless_ip_association" {
+  count = var.regional && var.use_nat_gateway ? 1 : 0
+
+  nat_gateway_id       = azurerm_nat_gateway.agentless_nat_gateway[0].id
+  public_ip_address_id = azurerm_public_ip.agentless_public_ip[0].id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "agentless_nat_gateway_association" {
+  count = var.regional && var.use_nat_gateway ? 1 : 0
+
+  subnet_id      =  length(var.custom_network) > 0 ? var.custom_network : azurerm_subnet.agentless_subnet[0].id
+  nat_gateway_id = azurerm_nat_gateway.agentless_nat_gateway[0].id
+}
+
+/* **************** End Networking **************** */
 
 // Cloud Run service for Agentless Workload Scanning
 resource "azurerm_log_analytics_workspace" "agentless_orchestrate" {
@@ -481,7 +543,7 @@ resource "azurerm_container_app_environment" "agentless_orchestrate" {
 }
 
 
-// Cloud Scheduler job to perodically run the Azure Container App 
+// Cloud Scheduler job to periodically run the Azure Container App 
 // https://learn.microsoft.com/en-us/rest/api/containerapps/preview/jobs/create-or-update?tabs=HTTP#jobconfiguration 
 resource "azapi_resource" "container_app_job_agentless" {
   count = var.regional ? 1 : 0
