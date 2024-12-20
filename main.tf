@@ -154,6 +154,7 @@ resource "azurerm_resource_group" "scanning_rg" {
 
   name     = local.scanning_resource_group_name
   location = local.region
+  tags     = var.tags
 }
 
 data "azurerm_resource_group" "scanning_rg" {
@@ -528,6 +529,7 @@ resource "azurerm_log_analytics_workspace" "agentless_orchestrate" {
   name                = replace("${local.prefix}-log-${local.region}-${local.suffix}", " ", "-")
   location            = local.region
   resource_group_name = local.scanning_resource_group_name
+  tags                = var.tags
 }
 
 
