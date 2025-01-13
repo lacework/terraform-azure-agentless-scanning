@@ -62,8 +62,8 @@ variable "tags" {
 
 variable "use_nat_gateway" {
   type        = bool
-  description = "Whether to use a NAT gateway instead of public IPs on scanning instances. Defaults to `true`."
-  default     = true
+  description = "Whether to use a NAT gateway instead of public IPs on scanning instances. Defaults to `false`."
+  default     = false
 }
 
 variable "custom_network" {

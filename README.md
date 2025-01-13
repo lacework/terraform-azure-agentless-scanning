@@ -115,7 +115,7 @@ No modules.
 | <a name="input_suffix"></a> [suffix](#input\_suffix) | A string to be appended to the end of the name of all new resources. | `string` | `""` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Set of tags which will be added to the resources managed by the module. | `map(string)` | `{}` | no |
 | <a name="input_tenant_id"></a> [tenant\_id](#input\_tenant\_id) | TenantId where LW Sidekick is deployed | `string` | `""` | no |
-| <a name="input_use_nat_gateway"></a> [use\_nat\_gateway](#input\_use\_nat\_gateway) | Whether to use a NAT gateway instead of public IPs on scanning instances. Defaults to `true`. | `bool` | `true` | no |
+| <a name="input_use_nat_gateway"></a> [use\_nat\_gateway](#input\_use\_nat\_gateway) | Whether to use a NAT gateway instead of public IPs on scanning instances. Defaults to `false`. | `bool` | `false` | no |
 
 ## Outputs
 
