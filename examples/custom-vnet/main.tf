@@ -60,11 +60,9 @@ module "lacework_azure_agentless_scanning_rg_and_vnet" {
   create_log_analytics_workspace = true
   region                         = local.region
 
-  // When using a custom vnet with the default NAT gateway (use_nat_gateway = true),
-  // you must specify the network security group here:
-  custom_network_security_group = azurerm_network_security_group.example.id
-  
-  // If you want to use public IPs instead of a NAT gateway, comment out the line above
-  // and uncomment this line:
-  // use_nat_gateway = false
+  // When using a custom vnet with the NAT gateway (use_nat_gateway = true),
+  // uncomment the two lines below and specify the network security group:
+
+  // use_nat_gateway = true
+  // custom_network_security_group = azurerm_network_security_group.example.id
 }
