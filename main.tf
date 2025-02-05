@@ -471,6 +471,7 @@ resource "azurerm_subnet" "agentless_subnet" {
   resource_group_name  = local.scanning_resource_group_name
   virtual_network_name = azurerm_virtual_network.agentless_orchestrate[0].name
   address_prefixes     = ["10.0.0.0/16"]
+  service_endpoints = var.use_service_endpoints ? ["Microsoft.ContainerRegistry","Microsoft.Storage"] : [""]
 }
 
 resource "azurerm_subnet_network_security_group_association" "agentless_nsg_association" {
@@ -516,20 +517,6 @@ resource "azurerm_subnet_nat_gateway_association" "agentless_nat_gateway_associa
 
   subnet_id      =  length(var.custom_network) > 0 ? var.custom_network : azurerm_subnet.agentless_subnet[0].id
   nat_gateway_id = azurerm_nat_gateway.agentless_nat_gateway[0].id
-}
-
-resource "azurerm_subnet_service_endpoint" "storage" {
-  count = var.regional && var.use_service_endpoints ? 1 : 0
-
-  subnet_id        = length(var.custom_network) > 0 ? var.custom_network : azurerm_subnet.agentless_subnet[0].id
-  service         = "Microsoft.Storage"
-}
-
-resource "azurerm_subnet_service_endpoint" "acr" {
-  count = var.regional && var.use_service_endpoints ? 1 : 0
-
-  subnet_id        = length(var.custom_network) > 0 ? var.custom_network : azurerm_subnet.agentless_subnet[0].id
-  service         = "Microsoft.ContainerRegistry"
 }
 
 /* **************** End Networking **************** */
