@@ -142,7 +142,7 @@ locals {
     australiasoutheast = "australiaeast"
   }
   container_region = lookup(local.unsupported_region_replacements, local.region, local.region)
-  use_public_ips = (var.use_nat_gateway || use_service_endpoints) ? "false" : "true"
+  use_public_ips = (var.use_nat_gateway || var.use_service_endpoints) ? "false" : "true"
 }
 
 resource "random_id" "uniq" {
