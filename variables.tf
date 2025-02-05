@@ -66,6 +66,12 @@ variable "use_nat_gateway" {
   default     = false
 }
 
+variable "use_service_endpoints" {
+  type        = bool
+  description = "Whether to use service endpoints instead of public IPs on scanning instances. Defaults to `false`."
+  default     = false
+}
+
 variable "custom_network" {
   type        = string
   default     = ""

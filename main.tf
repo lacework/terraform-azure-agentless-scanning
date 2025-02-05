@@ -142,7 +142,7 @@ locals {
     australiasoutheast = "australiaeast"
   }
   container_region = lookup(local.unsupported_region_replacements, local.region, local.region)
-  use_public_ips = var.use_nat_gateway ? "false" : "true"
+  use_public_ips = (var.use_nat_gateway || use_service_endpoints) ? "false" : "true"
 }
 
 resource "random_id" "uniq" {
@@ -516,6 +516,20 @@ resource "azurerm_subnet_nat_gateway_association" "agentless_nat_gateway_associa
 
   subnet_id      =  length(var.custom_network) > 0 ? var.custom_network : azurerm_subnet.agentless_subnet[0].id
   nat_gateway_id = azurerm_nat_gateway.agentless_nat_gateway[0].id
+}
+
+resource "azurerm_subnet_service_endpoint" "storage" {
+  count = var.regional && var.use_service_endpoints ? 1 : 0
+
+  subnet_id        = length(var.custom_network) > 0 ? var.custom_network : azurerm_subnet.agentless_subnet[0].id
+  service         = "Microsoft.Storage"
+}
+
+resource "azurerm_subnet_service_endpoint" "acr" {
+  count = var.regional && var.use_service_endpoints ? 1 : 0
+
+  subnet_id        = length(var.custom_network) > 0 ? var.custom_network : azurerm_subnet.agentless_subnet[0].id
+  service         = "Microsoft.ContainerRegistry"
 }
 
 /* **************** End Networking **************** */
