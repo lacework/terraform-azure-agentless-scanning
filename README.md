@@ -7,6 +7,8 @@
 
 A Terraform Module to configure the Lacework Agentless Scanner on Azure.
 
+To ensure smooth deployment, please reference our [preflight check](./preflight_check/).
+
 All code contributions made by Lacework customers to this repo are considered ‘Feedback’ under section 4.3 of the Lacework Terms of Service.
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
