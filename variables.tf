@@ -47,11 +47,10 @@ variable "key_vault_id" {
 }
 
 # Scanner configuration 
-# TODO: update this to Azure registry when we have it 
 variable "image_url" {
   type        = string
   description = "The container image url for Lacework Agentless Workload Scanning."
-  default     = "public.ecr.aws/p5r4i7k7/sidekick:latest"
+  default     = "sidekickpublic.azurecr.io/sidekick:latest"
 }
 
 variable "tags" {
@@ -62,8 +61,8 @@ variable "tags" {
 
 variable "use_nat_gateway" {
   type        = bool
-  description = "Whether to use a NAT gateway instead of public IPs on scanning instances. Defaults to `false`."
-  default     = false
+  description = "Whether to use a NAT gateway instead of public IPs on scanning instances. Defaults to `true`."
+  default     = true
 }
 
 variable "custom_network" {
