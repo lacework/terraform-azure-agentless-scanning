@@ -19,7 +19,7 @@ This tool
 ### Interactive Mode
 
 ```bash
-uv run preflight_check.py
+uv run -m preflight_check
 ```
 
 The script will prompt for:
