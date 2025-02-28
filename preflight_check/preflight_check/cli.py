@@ -106,6 +106,8 @@ def prompt_nat_gateway() -> bool:
     console.print("\n[bold]Network Configuration[/bold]")
     console.print(
         "[dim]We recommend deploying AWLS with a NAT Gateway, but you can opt out if you prefer.[/dim]")
+    console.print(
+        "[dim]For more details on deploying with/without a NAT Gateway, please refer to the Lacework FortiCNAPP docs:\nhttps://docs.fortinet.com/document/lacework-forticnapp/24.4.0/new-features/13869/integrating-agentless-workload-security-with-azure?preview_token=44849b8a6bf658c3c2b3#:~:text=deploy%20the%20Agentless%20scanning%20integration%20with%20a%20NAT%20gateway.[/dim]")
     return Confirm.ask("Use NAT Gateway?", default=True)
 
 
@@ -180,13 +182,14 @@ def print_quota_requirements(scanning_sub_name: str, selected_regions: List[str]
     """Display quota requirements across all regions"""
     console.print("\n[bold]Quota Requirements[/bold]")
     console.print(
-        f"Please ensure that the usage quotas configured in the subscription {scanning_sub_name} meet the required quotas:")
+        f"Please ensure that the usage quota limits configured in the [bold yellow]{scanning_sub_name}[/bold yellow] subscription meet the required regional quotas:")
 
     table = Table(box=HEAVY_EDGE)
     table.add_column("Region", style="magenta")
     table.add_column("VM Count", style="green", justify="right")
-    table.add_column("Required vCPUs", style="blue", justify="right")
-    table.add_column("Required Public IPs", style="blue", justify="right")
+    table.add_column("Required vCPUs", style="bold yellow", justify="right")
+    table.add_column("Required Public IPs",
+                     style="bold yellow", justify="right")
 
     # Aggregate VM counts by region across all subscriptions
     for region_name in sorted(selected_regions):
