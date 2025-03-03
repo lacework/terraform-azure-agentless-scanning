@@ -1,95 +1,48 @@
-from typing import Dict, List
+from typing import Dict
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.subscription import SubscriptionClient
 from azure.mgmt.compute import ComputeManagementClient
+from azure.mgmt.network import NetworkManagementClient
+from azure.mgmt.authorization import AuthorizationManagementClient
+from msgraph import GraphServiceClient
 
-from ..models import Subscription, Region
 
+class AzureClientFactory:
+    """Factory for Azure clients"""
 
-class AzureService:
-    """Handles all interactions with Azure APIs"""
+    credential: DefaultAzureCredential
+    principal_id: str
+    _subscription_client: SubscriptionClient
+    _graph_client: GraphServiceClient
+    _network_clients: Dict[str, NetworkManagementClient] = {}
+    _compute_clients: Dict[str, ComputeManagementClient] = {}
+    _auth_clients: Dict[str, AuthorizationManagementClient] = {}
 
     def __init__(self, credential: DefaultAzureCredential):
         self.credential = credential
         self._subscription_client = SubscriptionClient(credential)
+        self._graph_client = GraphServiceClient(credential)
 
-    def list_subscriptions(self) -> List[Subscription]:
-        """
-        List all accessible subscriptions.
-        
-        Returns:
-            List of Subscription objects
-        """
-        try:
-            subs = self._subscription_client.subscriptions.list()
-            return [
-                Subscription(
-                    id=sub.subscription_id,
-                    name=sub.display_name,
-                    regions={}  # Empty initially, populated when needed
-                )
-                for sub in subs
-            ]
-        except Exception as e:
-            # TODO: Better error handling
-            raise RuntimeError(f"Failed to list subscriptions: {str(e)}")
+    def get_subscription_client(self) -> SubscriptionClient:
+        return self._subscription_client
 
-    def get_subscription_vms(self, subscription: Subscription) -> Subscription:
-        """
-        Count VMs in each region for a subscription.
-        Updates the subscription's regions with VM counts.
-        
-        Args:
-            subscription: The subscription to enumerate
-            
-        Returns:
-            Updated Subscription object with region VM counts
-        """
-        try:
-            compute_client = ComputeManagementClient(
-                self.credential,
-                subscription.id
-            )
+    def get_compute_client(self, subscription_id: str) -> ComputeManagementClient:
+        if subscription_id not in self._compute_clients:
+            self._compute_clients[subscription_id] = ComputeManagementClient(
+                self.credential, subscription_id)
+        return self._compute_clients[subscription_id]
 
-            # Track instances by region
-            vm_counts: Dict[str, int] = {}
+    def get_network_client(self, subscription_id: str) -> NetworkManagementClient:
+        if subscription_id not in self._network_clients:
+            self._network_clients[subscription_id] = NetworkManagementClient(
+                self.credential, subscription_id)
+        return self._network_clients[subscription_id]
 
-            # List all VMs in the subscription
-            for vm in compute_client.virtual_machines.list_all():
-                region = vm.location.lower()
-                vm_counts[region] = vm_counts.get(region, 0) + 1
+    def get_auth_client(self, subscription_id: str) -> AuthorizationManagementClient:
+        if subscription_id not in self._auth_clients:
+            self._auth_clients[subscription_id] = AuthorizationManagementClient(
+                self.credential, subscription_id)
+        return self._auth_clients[subscription_id]
 
-            # Convert to Region objects
-            subscription.regions = {
-                name: Region(name=name, vm_count=count)
-                for name, count in vm_counts.items()
-            }
-
-            # TODO: Add VMSS enumeration
-
-            return subscription
-
-        except Exception as e:
-            # TODO: Better error handling
-            raise RuntimeError(
-                f"Failed to count VMs in subscription {subscription.id}: {str(e)}")
-
-    def check_permissions(self) -> List[str]:
-        """
-        Check if the authenticated principal has required permissions.
-        
-        Returns:
-            List of missing permissions
-        """
-        # TODO: Implement permission checking
-        return []
-
-    def check_quotas(self, region: Region) -> Dict[str, int]:
-        """
-        Check quota limits for a region.
-        
-        Returns:
-            Dictionary of quota limits
-        """
-        # TODO: Implement quota checking
-        return {}
+    def get_graph_client(self) -> GraphServiceClient:
+        return self._graph_client

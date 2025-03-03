@@ -52,17 +52,5 @@ class DeploymentConfig:
     integration_type: IntegrationType
     scanning_subscription: Subscription
     monitored_subscriptions: List[Subscription]
+    regions: List[Region]
     use_nat_gateway: bool = True
-
-    @property
-    def all_regions(self) -> List[str]:
-        """Get unique list of regions across all subscriptions"""
-        regions = set()
-        for sub in [self.scanning_subscription] + self.monitored_subscriptions:
-            regions.update(sub.regions.keys())
-        return sorted(regions)
-
-    @property
-    def total_vms(self) -> int:
-        """Total VMs across all monitored subscriptions"""
-        return sum(sub.total_vms for sub in self.monitored_subscriptions)

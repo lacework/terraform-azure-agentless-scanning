@@ -21,15 +21,22 @@ def prompt_integration_type() -> IntegrationType:
     return IntegrationType(choice)
 
 
-def prompt_scanning_subscription(available_subs: List[Subscription]) -> Subscription:
+def prompt_scanning_subscription(available_subs: List[Subscription], integration_type: IntegrationType) -> Subscription:
     """Prompt user to choose scanning subscription"""
     console.print(f"\n[bold]Available Subscriptions:[/bold]")
     print_subscriptions(available_subs)
-    console.print("\n[bold]Scanning Subscription[/bold]")
-    console.print(
-        "[dim]What subscription should the scanner be deployed to?[/dim]")
+    if integration_type == IntegrationType.SUBSCRIPTION:
+        console.print("\n[bold]Subscription[/bold]")
+        console.print(
+            "[dim]What subscription do you want to monitor?[/dim]")
+    else:
+        console.print("\n[bold]Scanning Subscription[/bold]")
+        console.print(
+            "[dim]What subscription should the scanner be deployed to?[/dim]")
+    sub_id = Prompt.ask("Subscription ID",
+                        choices=[sub.id for sub in available_subs],
+                        show_choices=False)
 
-    sub_id = Prompt.ask("Subscription ID")
     # Find the subscription in our list
     for sub in available_subs:
         if sub.id == sub_id:
@@ -38,11 +45,10 @@ def prompt_scanning_subscription(available_subs: List[Subscription]) -> Subscrip
             return sub
     raise ValueError(f"Subscription {sub_id} not found")
 
-
 def prompt_monitored_subscriptions(available_subs: List[Subscription]) -> List[Subscription]:
     """Prompt user to choose which subscriptions to monitor"""
     console.print("\n[bold]Monitored Subscriptions[/bold]")
-    console.print("[dim]Choose which subscriptions to be scanned.[/dim]")
+    console.print("[dim]Choose which subscriptions to be monitored.[/dim]")
 
     scan_scope = Prompt.ask(
         "Scan scope",
@@ -51,12 +57,12 @@ def prompt_monitored_subscriptions(available_subs: List[Subscription]) -> List[S
     )
 
     if scan_scope == "all":
-        console.print("[dim]All subscriptions will be scanned.[/dim]")
+        console.print("[dim]All subscriptions will be monitored.[/dim]")
         return available_subs
 
     elif scan_scope == "exclude":
         console.print(
-            "[dim]Select subscriptions to exclude from scanning.[/dim]")
+            "[dim]Select subscriptions to exclude from monitoring.[/dim]")
         print_subscriptions(available_subs)
 
         excluded_ids = Prompt.ask(
@@ -79,7 +85,7 @@ def prompt_monitored_subscriptions(available_subs: List[Subscription]) -> List[S
         return monitored_subs
 
     else:  # specify
-        console.print("[dim]Select specific subscriptions to scan.[/dim]")
+        console.print("[dim]Select specific subscriptions to monitor.[/dim]")
         print_subscriptions(available_subs)
 
         specified_ids = Prompt.ask(
@@ -96,7 +102,7 @@ def prompt_monitored_subscriptions(available_subs: List[Subscription]) -> List[S
                     f"[yellow]Warning: Subscription {sub_id} not found[/yellow]")
 
         console.print(
-            "\n[bold]Only the following subscriptions will be scanned:[/bold]")
+            "\n[bold]Only the following subscriptions will be monitored:[/bold]")
         print_subscriptions(specified_subs)
         return specified_subs
 

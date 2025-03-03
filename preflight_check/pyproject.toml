@@ -6,8 +6,11 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "azure-identity>=1.20.0",
+    "azure-mgmt-authorization>=4.0.0",
     "azure-mgmt-compute>=34.0.0",
+    "azure-mgmt-network>=28.1.0",
     "azure-mgmt-subscription>=3.1.1",
+    "msgraph-sdk>=1.22.0",
     "rich>=13.9.4",
     "typer>=0.15.1",
 ]
