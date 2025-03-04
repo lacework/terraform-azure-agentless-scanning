@@ -66,20 +66,23 @@ locals {
   storage_account_id   = var.global ? azurerm_storage_account.scanning[0].id : var.global_module_reference.storage_account_id
 
   subscriptions_list_local = var.global ? var.subscriptions_list : var.global_module_reference.subscriptions_list
-  provided_subscriptions_list = [for sub in local.subscriptions_list_local : sub if !(substr(sub, 0, 1) == "-")]
-  /* if subscription list is provided, use it, otherwise, use all available subscriptions minus excluded subscriptions */
-  excluded_subscriptions_list = [for sub in local.subscriptions_list_local : trimprefix(sub, "-") if(substr(sub, 0, 1) == "-")]
-  included_subscriptions_list = local.integration_level == "TENANT" ? (
-    length(local.provided_subscriptions_list) > 0 ? local.provided_subscriptions_list : tolist(setsubtract(
-      toset([for sub in data.azurerm_subscriptions.available.subscriptions : sub.id]), /* all available subscriptions */
-      toset(local.excluded_subscriptions_list)
-  ))) : distinct(concat(local.provided_subscriptions_list, [local.scanning_subscription_id]))
-  /* double forward slash to match "/", otherwise TF treats it as a regex */
-  included_subscriptions_list_no_prefix = [for sub in local.included_subscriptions_list : replace(sub, "//subscriptions//", "")]
-  excluded_subscriptions_list_no_prefix = [for sub in local.excluded_subscriptions_list : replace(sub, "//subscriptions//", "-")]
 
-  // excluded subscriptions are passed in via env var and intentionally ommitted here
-  monitored_role_scopes = local.included_subscriptions_list
+  /* Define the scope for the monitored role
+  For SUBSCRIPTION integration level, we use the scanning subscription.
+  For TENANT integration level with subscriptions_list, we set the scope based on the subscriptions_list provided by the user.
+    - If the user specified included subscriptions, we set the scope to the included subscriptions.
+    - Otherwise, (if the user specified excluded subscriptions or didn't specify subscriptions at all), 
+      we use the root management group scope to enable AWLS to monitor all subscriptions in the tenant, including any created in the future.
+  */
+  included_subscriptions = [for sub in local.subscriptions_list_local : sub if !(substr(sub, 0, 1) == "-")]
+  management_group_scope = "/providers/Microsoft.Management/managementGroups/${local.tenant_id}"
+  monitored_role_scopes = (
+    upper(var.integration_level) == "SUBSCRIPTION" 
+    ? [local.scanning_subscription_id] 
+    : length(local.included_subscriptions) > 0 
+      ? local.included_subscriptions 
+      : [local.management_group_scope]
+  )
 
   environment_variables = {
     STARTUP_PROVIDER                  = "AZURE"
@@ -196,10 +199,8 @@ resource "lacework_integration_azure_agentless_scanning" "lacework_cloud_account
   scan_multi_volume            = var.scan_multi_volume
   scan_stopped_instances       = var.scan_stopped_instances
   query_text                   = var.filter_query_text
-  subscriptions_list = concat(
-    local.included_subscriptions_list_no_prefix,
-    local.excluded_subscriptions_list_no_prefix,
-  )
+  // The Lacework AWLS integration API expects subscription IDs without the "/subscriptions/" prefix
+  subscriptions_list           = [for sub in local.subscriptions_list_local : replace(sub, "/subscriptions/", "")]
 }
 
 /* **************** General **************** 
@@ -411,7 +412,7 @@ resource "azurerm_role_assignment" "scanner" {
 }
 
 resource "azurerm_role_assignment" "orchestrate" {
-  for_each = var.global ? toset(local.included_subscriptions_list) : []
+  for_each = var.global ? toset(local.monitored_role_scopes) : []
   depends_on = [
     azurerm_role_definition.agentless_monitored_subscription[0],
     azurerm_user_assigned_identity.sidekick,
