@@ -241,7 +241,7 @@ Define what resources should be monitored/scanned
 /* TODO: add a check that the subscriptions_list is not set for non-global resources */
 variable "subscriptions_list" {
   type        = set(string)
-  description = "List of subscriptions to be scanned or excluded. Prefix subscription IDs with '-' to exclude it from scanning. Either provide subscription IDs to include OR subscription IDs to exclude, but not both. Set only for global resource. Set only when integration_level = 'TENANT'."
+  description = "List of subscriptions to be scanned or excluded. Prefix subscription IDs with `'-'` to exclude it from scanning. Either provide subscription IDs to include OR subscription IDs to exclude, but not both. Set only for global resource. Set only when `integration_level = 'TENANT'`."
   default     = []
   validation {
     condition     = alltrue([for sub in var.subscriptions_list : can(regex("^-?/subscriptions/.*", sub))])
