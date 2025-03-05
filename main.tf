@@ -200,7 +200,7 @@ resource "lacework_integration_azure_agentless_scanning" "lacework_cloud_account
   scan_stopped_instances       = var.scan_stopped_instances
   query_text                   = var.filter_query_text
   // The Lacework AWLS integration API expects subscription IDs without the "/subscriptions/" prefix
-  subscriptions_list           = [for sub in local.subscriptions_list_local : replace(sub, "/subscriptions/", "")]
+  subscriptions_list           = [for sub in local.subscriptions_list_local : replace(sub, "//subscriptions//", "")]
 }
 
 /* **************** General **************** 
