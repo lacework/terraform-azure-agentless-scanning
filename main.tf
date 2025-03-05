@@ -65,11 +65,21 @@ locals {
   storage_account_url  = length(var.storage_account_url) > 0 ? var.storage_account_url : "https://${local.storage_account_name}.blob.core.windows.net"
   storage_account_id   = var.global ? azurerm_storage_account.scanning[0].id : var.global_module_reference.storage_account_id
 
-  subscriptions_list_local = var.global ? var.subscriptions_list : var.global_module_reference.subscriptions_list
+  /* Set the list of monitored subscriptions
+  For SUBSCRIPTION integration level, we set subscriptions_list to only include the scanning subscription.
+  For TENANT integration level, we use the subscriptions_list provided by the user.
+  */
+  subscriptions_list_local = (
+    var.integration_level == "SUBSCRIPTION"
+    ? [local.scanning_subscription_id]
+    : var.global
+      ? var.subscriptions_list
+      : var.global_module_reference.subscriptions_list
+  )
 
   /* Define the scope for the monitored role
-  For SUBSCRIPTION integration level, we use the scanning subscription.
-  For TENANT integration level with subscriptions_list, we set the scope based on the subscriptions_list provided by the user.
+  - For SUBSCRIPTION integration level, we set the scope to the scanning subscription (handled above by setting subscriptions_list_local).
+  - For TENANT integration level, we set the scope based on the subscriptions_list provided by the user.
     - If the user specified included subscriptions, we set the scope to the included subscriptions.
     - Otherwise, (if the user specified excluded subscriptions or didn't specify subscriptions at all), 
       we use the root management group scope to enable AWLS to monitor all subscriptions in the tenant, including any created in the future.
@@ -77,9 +87,7 @@ locals {
   included_subscriptions = [for sub in local.subscriptions_list_local : sub if !(substr(sub, 0, 1) == "-")]
   management_group_scope = "/providers/Microsoft.Management/managementGroups/${local.tenant_id}"
   monitored_role_scopes = (
-    upper(var.integration_level) == "SUBSCRIPTION" 
-    ? [local.scanning_subscription_id] 
-    : length(local.included_subscriptions) > 0 
+    length(local.included_subscriptions) > 0 
       ? local.included_subscriptions 
       : [local.management_group_scope]
   )
