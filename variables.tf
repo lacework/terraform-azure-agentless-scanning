@@ -238,32 +238,44 @@ variable "create_log_analytics_workspace" {
 Define what resources should be monitored/scanned 
 */
 
-/* TODO: add a check that the subscriptions_list is not set for non-global resources */
-variable "subscriptions_list" {
+/* TODO: add a check that the included subscriptions are not set for non-global resources */
+variable "included_subscriptions" {
   type        = set(string)
-  description = "List of subscriptions to be scanned or excluded. Prefix subscription IDs with `'-'` to exclude it from scanning. Either provide subscription IDs to include OR subscription IDs to exclude, but not both. Set only for global resource. Set only when `integration_level = 'TENANT'`."
+  description = "List of subscriptions to be monitored. Must be specified with `integration_level = 'SUBSCRIPTION'`. Set only for global resource."
   default     = []
   validation {
-    condition     = alltrue([for sub in var.subscriptions_list : can(regex("^-?/subscriptions/.*", sub))])
-    error_message = "Need to be a list of fully qualified subscriptions (starting with '/subscriptions/'), with optional '-' prefix."
+    condition     = alltrue([for sub in var.included_subscriptions : can(regex("^/subscriptions/.*", sub))])
+    error_message = "included_subscriptions must be a list of fully qualified subscriptions (starting with '/subscriptions/')"
   }
-  
-  # Ensure users don't provide both included and excluded subscriptions
+  validation {
+    condition = !var.global || ((length(var.included_subscriptions) > 0) == (upper(var.integration_level) == "SUBSCRIPTION"))
+    error_message = "included_subscriptions must be specified if and only if integration_level == 'SUBSCRIPTION'."
+  }
+  validation {
+    condition = (length(var.included_subscriptions) > 0 ? var.global : true)
+    error_message = "included_subscriptions must only be specified in the global resource - cannot be specified with global == false"
+  }
+}
+
+variable "excluded_subscriptions" {
+  type        = set(string)
+  description = "OPTIONAL: List of subscriptions to be excluded from monitoring, only valid when `integration_level == 'TENANT'`. Set only for global resource."
+  default     = []
+
+  validation {
+    condition     = alltrue([for sub in var.excluded_subscriptions : can(regex("^/subscriptions/.*", sub))])
+    error_message = "excluded_subscriptions must be a list of fully qualified subscriptions (starting with '/subscriptions/')"
+  }
   validation {
     condition = (
-      length([for sub in var.subscriptions_list : sub if substr(sub, 0, 1) == "-"]) == 0 || 
-      length([for sub in var.subscriptions_list : sub if substr(sub, 0, 1) != "-"]) == 0
+      length(var.excluded_subscriptions) > 0 ? 
+      upper(var.integration_level) == "TENANT" : true
     )
-    error_message = "You cannot specify both included and excluded subscriptions in subscriptions_list. Either provide a list of subscriptions to include, or a list of subscriptions to exclude (with '-' prefix), but not both."
+    error_message = "excluded_subscriptions can only be specified when `integration_level == 'TENANT'`."
   }
-  
-  # Ensure subscriptions_list is only provided when integration_level is "TENANT"
   validation {
-    condition = (
-      length(var.subscriptions_list) == 0 || 
-      upper(var.integration_level) == "TENANT"
-    )
-    error_message = "subscriptions_list should only be provided when integration_level is 'TENANT'. For 'SUBSCRIPTION' level, only the scanning subscription will be monitored."
+    condition = (length(var.excluded_subscriptions) > 0 ? var.global : true)
+    error_message = "excluded_subscriptions must only be specified in the global resource - cannot be specified with global == false"
   }
 }
 /* **************** End Monitored Section **************** */
@@ -327,7 +339,8 @@ variable "global_module_reference" {
     scanning_subscription_role_definition_id  = string
     sidekick_principal_id                     = string
     sidekick_client_id                        = string
-    subscriptions_list                        = set(string)
+    included_subscriptions                    = set(string)
+    excluded_subscriptions                    = set(string)
   })
   default = {
     scanning_resource_group_name              = ""
@@ -347,7 +360,8 @@ variable "global_module_reference" {
     scanning_subscription_role_definition_id  = ""
     sidekick_principal_id                     = ""
     sidekick_client_id                        = ""
-    subscriptions_list                        = []
+    included_subscriptions                    = []
+    excluded_subscriptions                    = []
   }
   description = "A reference to the global lacework_azure_agentless_scanning module for this account."
 }

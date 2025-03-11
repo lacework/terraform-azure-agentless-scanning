@@ -65,31 +65,33 @@ locals {
   storage_account_url  = length(var.storage_account_url) > 0 ? var.storage_account_url : "https://${local.storage_account_name}.blob.core.windows.net"
   storage_account_id   = var.global ? azurerm_storage_account.scanning[0].id : var.global_module_reference.storage_account_id
 
-  /* Set the list of monitored subscriptions
-  For SUBSCRIPTION integration level, we set subscriptions_list to only include the scanning subscription.
-  For TENANT integration level, we use the subscriptions_list provided by the user.
-  */
-  subscriptions_list_local = (
-    var.integration_level == "SUBSCRIPTION"
-    ? [local.scanning_subscription_id]
-    : var.global
-      ? var.subscriptions_list
-      : var.global_module_reference.subscriptions_list
+  included_subscriptions_local = (var.global
+      ? var.included_subscriptions
+      : var.global_module_reference.included_subscriptions
+  )
+  excluded_subscriptions_local = (var.global
+      ? var.excluded_subscriptions
+      : var.global_module_reference.excluded_subscriptions
   )
 
-  /* Define the scope for the monitored role
-  - For SUBSCRIPTION integration level, we set the scope to the scanning subscription (handled above by setting subscriptions_list_local).
-  - For TENANT integration level, we set the scope based on the subscriptions_list provided by the user.
-    - If the user specified included subscriptions, we set the scope to the included subscriptions.
-    - Otherwise, (if the user specified excluded subscriptions or didn't specify subscriptions at all), 
-      we use the root management group scope to enable AWLS to monitor all subscriptions in the tenant, including any created in the future.
+  /* Convert the excluded and included subscriptions to the format required by the Lacework AWLS integration
+  The Lacework AWLS integration expects the subscriptions to be unqualified, so we remove the "/subscriptions/" prefix 
+  The resulting subscriptions_list is either the list of included or excluded subscriptions, depending on the integration level
+  Note: excluded subscriptions are prefixed with "-" to indicate they should be excluded from monitoring 
   */
-  included_subscriptions = [for sub in local.subscriptions_list_local : sub if !(substr(sub, 0, 1) == "-")]
-  management_group_scope = "/providers/Microsoft.Management/managementGroups/${local.tenant_id}"
-  monitored_role_scopes = (
-    length(local.included_subscriptions) > 0 
-      ? local.included_subscriptions 
-      : [local.management_group_scope]
+  included_subscriptions_list = [for sub in local.included_subscriptions_local : replace(sub, "//subscriptions//", "")]
+  excluded_subscriptions_list = [for sub in local.excluded_subscriptions_local : replace(sub, "//subscriptions//", "-")]
+  subscriptions_list = var.integration_level == "SUBSCRIPTION" ? local.included_subscriptions_list : local.excluded_subscriptions_list
+
+  /* Define the scope for the monitored role
+  - For SUBSCRIPTION integration level, we set the scope to the set of included subscriptions specified by the user
+  - For TENANT integration level, we set the scope to the root management group to enable AWLS to monitor all subscriptions in the tenant, including any created in the future.
+  */
+  root_management_group_scope = ["/providers/Microsoft.Management/managementGroups/${local.tenant_id}"]
+  monitored_role_scopes = tolist(
+    var.integration_level == "SUBSCRIPTION"
+      ? local.included_subscriptions_local
+      : local.root_management_group_scope
   )
 
   environment_variables = {
@@ -208,7 +210,7 @@ resource "lacework_integration_azure_agentless_scanning" "lacework_cloud_account
   scan_stopped_instances       = var.scan_stopped_instances
   query_text                   = var.filter_query_text
   // The Lacework AWLS integration API expects subscription IDs without the "/subscriptions/" prefix
-  subscriptions_list           = [for sub in local.subscriptions_list_local : replace(sub, "//subscriptions//", "")]
+  subscriptions_list           = local.subscriptions_list
 }
 
 /* **************** General **************** 

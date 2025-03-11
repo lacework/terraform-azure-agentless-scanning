@@ -27,5 +27,7 @@ module "lacework_azure_agentless_scanning_subscription_us_west" {
   region                         = "West US"
   scanning_subscription_id       = "abcd-1234"
   tenant_id                      = "efgh-5678"
+  // specify which subscriptions to monitor - only do this in the global module
+  included_subscriptions         = ["/subscriptions/subscription-1", "/subscriptions/subscription-2"]
 }
 ```
