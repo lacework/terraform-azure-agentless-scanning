@@ -94,7 +94,12 @@ output "sidekick_principal_id" {
   description = "The principal id of the user identity used by agentless scanner"
 }
 
-output "subscriptions_list" {
-  value = local.subscriptions_list_local
-  description = "The subscriptions list in global module reference"
+output "included_subscriptions" {
+  value = local.included_subscriptions_local
+  description = "The included subscriptions list in global module reference"
+}
+
+output "excluded_subscriptions" {
+  value = local.excluded_subscriptions_local
+  description = "The excluded subscriptions list in global module reference"
 }

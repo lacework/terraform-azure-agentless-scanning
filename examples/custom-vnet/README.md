@@ -84,7 +84,7 @@ resource "azurerm_virtual_network" "example" {
 module "lacework_azure_agentless_scanning_rg_and_vnet" {
   source = "lacework/agentless-scanning/azure"
 
-  integration_level              = "SUBSCRIPTION"
+  integration_level              = "TENANT"
   global                         = true
   custom_network                 = tolist(azurerm_virtual_network.example.subnet)[0].id
   create_log_analytics_workspace = true
