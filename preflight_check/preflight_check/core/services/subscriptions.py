@@ -12,6 +12,7 @@ class SubscriptionService:
 
     def __init__(self, azure_client_factory: AzureClientFactory):
         self.azure_client_factory = azure_client_factory
+        self.get_subscriptions()
 
     def get_subscriptions(self) -> List[Subscription]:
         """
@@ -65,8 +66,8 @@ class SubscriptionService:
 
             # Convert to Region objects
             subscription.regions = {
-                name: Region(name=name, vm_count=count)
-                for name, count in vm_counts.items()
+                region_name: Region(name=region_name, vm_count=vm_count)
+                for region_name, vm_count in vm_counts.items()
             }
 
             # TODO: Add VMSS enumeration

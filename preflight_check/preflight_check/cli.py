@@ -1,43 +1,27 @@
-from typing import List, Dict
+from typing import List, Tuple
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 from rich.table import Table
 from rich.box import HEAVY_EDGE
 
-from .models import IntegrationType, Subscription, Region
+from .core.models import IntegrationType, Subscription
+from .core.preflight_check import PreflightCheck, QuotaChecks
 
 console = Console()
 
 
-def prompt_integration_type() -> IntegrationType:
-    """Prompt user to choose integration type"""
-    console.print("\n[bold]Integration Type[/bold]")
-    console.print(
-        "[dim]Choose whether to deploy the scanner at the tenant level or subscription level.[/dim]")
-    choice = Prompt.ask(
-        "Integration type",
-        choices=[t.value for t in IntegrationType]
-    )
-    return IntegrationType(choice)
-
-
-def prompt_scanning_subscription(available_subs: List[Subscription], integration_type: IntegrationType) -> Subscription:
+def prompt_scanning_subscription(available_subs: List[Subscription]) -> Subscription:
     """Prompt user to choose scanning subscription"""
     console.print(f"\n[bold]Available Subscriptions:[/bold]")
     print_subscriptions(available_subs)
-    if integration_type == IntegrationType.SUBSCRIPTION:
-        console.print("\n[bold]Subscription[/bold]")
-        console.print(
-            "[dim]What subscription do you want to monitor?[/dim]")
-    else:
-        console.print("\n[bold]Scanning Subscription[/bold]")
-        console.print(
-            "[dim]What subscription should the scanner be deployed to?[/dim]")
+    console.print("\n[bold]Scanning Subscription[/bold]")
+    console.print(
+        "[dim]What subscription do you want to deploy the AWLS scanner resources to?[/dim]")
     sub_id = Prompt.ask("Subscription ID",
                         choices=[sub.id for sub in available_subs],
                         show_choices=False)
 
-    # Find the subscription in our list
+    # Find the subscription in our list of available subscriptions
     for sub in available_subs:
         if sub.id == sub_id:
             console.print(
@@ -45,7 +29,8 @@ def prompt_scanning_subscription(available_subs: List[Subscription], integration
             return sub
     raise ValueError(f"Subscription {sub_id} not found")
 
-def prompt_monitored_subscriptions(available_subs: List[Subscription]) -> List[Subscription]:
+
+def prompt_monitored_subscriptions(available_subs: List[Subscription]) -> Tuple[List[Subscription], IntegrationType]:
     """Prompt user to choose which subscriptions to monitor"""
     console.print("\n[bold]Monitored Subscriptions[/bold]")
     console.print("[dim]Choose which subscriptions to be monitored.[/dim]")
@@ -58,7 +43,7 @@ def prompt_monitored_subscriptions(available_subs: List[Subscription]) -> List[S
 
     if scan_scope == "all":
         console.print("[dim]All subscriptions will be monitored.[/dim]")
-        return available_subs
+        return (available_subs, IntegrationType.TENANT)
 
     elif scan_scope == "exclude":
         console.print(
@@ -82,7 +67,7 @@ def prompt_monitored_subscriptions(available_subs: List[Subscription]) -> List[S
         console.print(
             "\n[bold]The following subscriptions will be excluded:[/bold]")
         print_subscriptions(excluded_subs)
-        return monitored_subs
+        return (monitored_subs, IntegrationType.TENANT)
 
     else:  # specify
         console.print("[dim]Select specific subscriptions to monitor.[/dim]")
@@ -104,7 +89,7 @@ def prompt_monitored_subscriptions(available_subs: List[Subscription]) -> List[S
         console.print(
             "\n[bold]Only the following subscriptions will be monitored:[/bold]")
         print_subscriptions(specified_subs)
-        return specified_subs
+        return (specified_subs, IntegrationType.SUBSCRIPTION)
 
 
 def prompt_nat_gateway() -> bool:
@@ -184,44 +169,6 @@ def print_vm_counts(subscriptions: List[Subscription]):
         print_subscriptions(subscriptions_with_no_vms)
 
 
-def print_quota_requirements(scanning_sub_name: str, selected_regions: List[str], subscriptions: List[Subscription], use_nat: bool, batch_size: int):
-    """Display quota requirements across all regions"""
-    console.print("\n[bold]Quota Requirements[/bold]")
-    console.print(
-        f"Please ensure that the usage quota limits configured in the [bold yellow]{scanning_sub_name}[/bold yellow] subscription meet the required regional quotas:")
-
-    table = Table(box=HEAVY_EDGE)
-    table.add_column("Region", style="magenta")
-    table.add_column("VM Count", style="green", justify="right")
-    table.add_column("Required vCPUs", style="bold yellow", justify="right")
-    table.add_column("Required Public IPs",
-                     style="bold yellow", justify="right")
-
-    # Aggregate VM counts by region across all subscriptions
-    for region_name in sorted(selected_regions):
-        total_vms = sum(
-            sub.regions[region_name].vm_count
-            for sub in subscriptions
-            if region_name in sub.regions
-        )
-
-        # Create aggregated region
-        region = Region(
-            name=region_name,
-            vm_count=total_vms
-        )
-
-        table.add_row(
-            region.name,
-            str(region.vm_count),
-            str(region.required_vcpu(batch_size)),
-            str(region.required_public_ips(use_nat, batch_size))
-        )
-
-    console.print("\n[bold]Required Regional Quotas:[/bold]")
-    console.print(table)
-
-
 def prompt_regions(subscriptions: List[Subscription]) -> List[str]:
     """
     Prompt user to choose deployment regions.
@@ -229,10 +176,9 @@ def prompt_regions(subscriptions: List[Subscription]) -> List[str]:
     Returns list of selected region names.
     """
     # Get unique regions across all subscriptions
-    detected_regions = set()
-    for sub in subscriptions:
-        detected_regions.update(sub.regions.keys())
-
+    detected_regions = set(
+        region_name for sub in subscriptions
+        for region_name in sub.regions.keys())
     console.print("\n[bold]Deployment Regions[/bold]")
     console.print(
         "[dim]Enter the Azure regions that you'd like to monitor.[/dim]")
@@ -244,20 +190,78 @@ def prompt_regions(subscriptions: List[Subscription]) -> List[str]:
         "Azure regions (comma-separated)",
         default=regions_default
     )
-    selected_regions = sorted([r.strip() for r in regions_input.split(",")])
-
-    # Filter subscriptions to only include selected regions
-    for sub in subscriptions:
-        sub.regions = {
-            name: region
-            for name, region in sub.regions.items()
-            if name in selected_regions
-        }
-
-    # Show filtered VM counts
-    console.print("\n[bold]Filtered VM Counts[/bold]")
+    selected_regions = []
+    for region_input in regions_input.strip().split(","):
+        if region_input.strip() in detected_regions:
+            selected_regions.append(region_input.strip())
+        else:
+            console.print(
+                f"[yellow]Warning: Region {region_input.strip()} not found[/yellow]")
     console.print(
-        f"[dim]The following is the updated VM count based on the user-selected regions:[/dim]\n{', '.join(selected_regions)}")
-    print_vm_counts(subscriptions)
-
+        f"[green]The following regions will be monitored:[/green] {', '.join(selected_regions)}")
     return selected_regions
+
+
+def print_quota_checks(quota_checks: QuotaChecks):
+    """Display usage quota checks across all regions in a table format"""
+    quota_checks_by_region = quota_checks.quota_checks
+    scanning_subscription = quota_checks.subscription
+
+    console.print(f"\n[bold]Usage Quota Limits[/bold]")
+    console.print(
+        f"Here are the configured and required usage quota limits for subscription [bold]{scanning_subscription.name}[/bold]:\n")
+
+    # Create quota requirements table
+    table = Table(show_header=True, header_style="bold", box=HEAVY_EDGE)
+    table.add_column("Region", style="bold cyan")
+    table.add_column("VM Count", style="cyan")
+    table.add_column("Quota", style="magenta")
+    table.add_column("Configured Limit", style="")
+    table.add_column("Required", style="")
+    table.add_column("Status", style="")
+
+    # Sort regions alphabetically
+    region_names = sorted(quota_checks_by_region.keys())
+
+    for region_name in region_names:
+        checks = quota_checks_by_region[region_name]
+
+        # # Sort checks by display name
+        # checks.sort(key=lambda c: c.display_name)
+
+        for i, check in enumerate(checks):
+            # Only show the region name for the first check of each region
+            region_display = region_name if i == 0 else ""
+
+            # Determine status symbol and style
+            status = "✅" if check.success else "❌"
+
+            # Add row to table
+            table.add_row(
+                region_display,
+                str(check.region.vm_count),
+                check.display_name,
+                str(check.configured_limit),
+                str(check.required_quota),
+                status
+            )
+        # Add a blank row between regions (unless it's the last region)
+        if region_name != region_names[-1]:
+            table.add_row("", "", "", "", "", "")
+
+    console.print(table)
+
+    # Print summary and help message
+    if quota_checks.all_checks_pass():
+        console.print(
+            "\n[green]✅ All configured usage quota limits are sufficient![/green]")
+    else:
+        console.print(
+            "\n[yellow]⚠️ Some configured usage quota limits are not sufficient.[/yellow]")
+        console.print(
+            "Please request quota increases at: https://portal.azure.com/#blade/Microsoft_Azure_Capacity/QuotaRequestBlade")
+
+
+def print_preflight_check(preflight_check: PreflightCheck):
+    """Print the preflight check results"""
+    print_quota_checks(preflight_check.usage_quota_checks)
