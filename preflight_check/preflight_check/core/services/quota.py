@@ -1,7 +1,6 @@
-from typing import Dict, Tuple
-from .azure import AzureClientFactory, ComputeManagementClient, NetworkManagementClient
 
 from ..models import UsageQuotaLimit
+from .azure import AzureClientFactory, ComputeManagementClient, NetworkManagementClient
 
 
 class QuotaService:
@@ -11,9 +10,9 @@ class QuotaService:
 
     # Cache of quotas for each subscription and region
     # Dict from (subscription_id, region) to a map of quota names to quota checks
-    _quotas: Dict[Tuple[str, str], Dict[str, UsageQuotaLimit]] = {}
+    _quotas: dict[tuple[str, str], dict[str, UsageQuotaLimit]] = {}
 
-    def __init__(self, azure_client_factory: AzureClientFactory):
+    def __init__(self, azure_client_factory: AzureClientFactory) -> None:
         self._azure_client_factory = azure_client_factory
 
     def get_quota_limit(self, subscription_id: str, region: str, quota_name: str) -> UsageQuotaLimit:
@@ -35,7 +34,7 @@ class QuotaService:
                 f"Quota not found for subscription {subscription_id} in region {region} and quota {quota_name}")
         return regional_quotas_for_sub[quota_name]
 
-    def get_quota_limits(self, subscription_id: str, region: str) -> Dict[str, UsageQuotaLimit]:
+    def get_quota_limits(self, subscription_id: str, region: str) -> dict[str, UsageQuotaLimit]:
         """
         Get and cache compute and network usage quota limits for a subscription and region.
 
@@ -60,14 +59,16 @@ class QuotaService:
                 usage.name.value: UsageQuotaLimit(
                     name=usage.name.value,
                     display_name=usage.name.localized_value,
-                    limit=usage.limit
+                    limit=usage.limit,
+                    usage=usage.current_value,
                 )
                 for usage in [*compute_usage, *network_usage]
             }
             return self._quotas[subscription_id, region]
         except Exception as e:
             raise RuntimeError(
-                f"Failed to get quotas for subscription {subscription_id} in region {region}: {str(e)}")
+                f"Failed to get quotas for subscription {subscription_id} in region {region}: {str(e)}"
+            ) from e
 
     def _compute_client(self, subscription_id: str) -> ComputeManagementClient:
         return self._azure_client_factory.get_compute_client(subscription_id)

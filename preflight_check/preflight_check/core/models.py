@@ -14,6 +14,7 @@ class UsageQuotaLimit:
     name: str
     display_name: str
     limit: int
+    usage: int
 
 
 @dataclass

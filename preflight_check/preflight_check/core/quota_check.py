@@ -1,16 +1,16 @@
-from dataclasses import dataclass, field
 # ABC = Abstract Base Class, used to make classes that can't be instantiated directly
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from math import ceil
-from typing import Dict
 
-from .models import Subscription, Region, UsageQuotaLimit
+from .models import Region, UsageQuotaLimit
 
 
 @dataclass
 class UsageQuotaCheck(ABC):
     """Base class for Azure usage quota checks"""
-    _quota_limits: Dict[str, UsageQuotaLimit]
+
+    _quota_limits: dict[str, UsageQuotaLimit]
     region: Region
     batch_size: int = 4
 
@@ -40,21 +40,25 @@ class UsageQuotaCheck(ABC):
 
     @property
     def configured_limit(self) -> int:
-        return self._get_quota_limit(self.name)
+        return self._get_quota_limit(self.name).limit
+
+    @property
+    def current_usage(self) -> int:
+        return self._get_quota_limit(self.name).usage
 
     @property
     def success(self) -> bool:
         """Check if quota is sufficient"""
         if self.configured_limit is None:
             return False
-        return self.configured_limit >= self.required_quota
+        return self.configured_limit >= (self.required_quota + self.current_usage)
 
-    def _get_quota_limit(self, quota_name: str) -> int:
-        return self._quota_limits[quota_name].limit
+    def _get_quota_limit(self, quota_name: str) -> UsageQuotaLimit:
+        return self._quota_limits[quota_name]
 
 
 @dataclass
-class VCPUQuotaCheck(UsageQuotaCheck):
+class VCPUQuotaCheckBase(UsageQuotaCheck, ABC):
     """Implements the logic for computing the required vCPU quota"""
 
     @property
@@ -64,8 +68,9 @@ class VCPUQuotaCheck(UsageQuotaCheck):
 
 
 @dataclass
-class PublicIPQuotaCheck(UsageQuotaCheck):
+class PublicIPQuotaCheckBase(UsageQuotaCheck, ABC):
     """Implements the logic for computing the required public IP quota"""
+
     use_nat_gateway: bool = False
 
     @property
@@ -76,7 +81,7 @@ class PublicIPQuotaCheck(UsageQuotaCheck):
 
 
 @dataclass
-class TotalVCPUsQuotaCheck(VCPUQuotaCheck):
+class TotalVCPUsQuotaCheck(VCPUQuotaCheckBase):
     """Usage quota check for total regional vCPUs"""
 
     @property
@@ -93,7 +98,7 @@ class TotalVCPUsQuotaCheck(VCPUQuotaCheck):
 
 
 @dataclass
-class DSFamilyVCPUQuotaCheck(VCPUQuotaCheck):
+class DSFamilyVCPUQuotaCheck(VCPUQuotaCheckBase):
     """Usage quota check for combined DS family vCPUs"""
 
     @property
@@ -111,14 +116,22 @@ class DSFamilyVCPUQuotaCheck(VCPUQuotaCheck):
     @property
     def configured_limit(self) -> int:
         """Sum the limits for the DS vCPU families"""
-        dsv3 = self._get_quota_limit("standardDSv3Family")
-        dsv4 = self._get_quota_limit("standardDSv4Family")
-        dsv5 = self._get_quota_limit("standardDSv5Family")
+        dsv3 = self._get_quota_limit("standardDSv3Family").limit
+        dsv4 = self._get_quota_limit("standardDSv4Family").limit
+        dsv5 = self._get_quota_limit("standardDSv5Family").limit
+        return dsv3 + dsv4 + dsv5
+
+    @property
+    def current_usage(self) -> int:
+        """Sum the current usage for the DS vCPU families"""
+        dsv3 = self._get_quota_limit("standardDSv3Family").usage
+        dsv4 = self._get_quota_limit("standardDSv4Family").usage
+        dsv5 = self._get_quota_limit("standardDSv5Family").usage
         return dsv3 + dsv4 + dsv5
 
 
 @dataclass
-class PublicIPQuotaCheck(PublicIPQuotaCheck):
+class PublicIPQuotaCheck(PublicIPQuotaCheckBase):
     """Usage quota check for public IP addresses"""
 
     @property
@@ -135,7 +148,7 @@ class PublicIPQuotaCheck(PublicIPQuotaCheck):
 
 
 @dataclass
-class StandardPublicIPQuotaCheck(PublicIPQuotaCheck):
+class StandardPublicIPQuotaCheck(PublicIPQuotaCheckBase):
     """Usage quota check for standard public IPv4 addresses"""
 
     @property

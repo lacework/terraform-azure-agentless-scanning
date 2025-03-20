@@ -217,7 +217,8 @@ def print_quota_checks(quota_checks: QuotaChecks):
     table.add_column("VM Count", style="cyan")
     table.add_column("Quota", style="magenta")
     table.add_column("Configured Limit", style="")
-    table.add_column("Required", style="")
+    table.add_column("Current Usage", style="")
+    table.add_column("Required Limit", style="")
     table.add_column("Status", style="")
 
     # Sort regions alphabetically
@@ -233,15 +234,18 @@ def print_quota_checks(quota_checks: QuotaChecks):
             # Only show the region name for the first check of each region
             region_display = region_name if i == 0 else ""
 
+            vm_count = str(check.region.vm_count) if i == 0 else ""
+
             # Determine status symbol and style
             status = "✅" if check.success else "❌"
 
             # Add row to table
             table.add_row(
                 region_display,
-                str(check.region.vm_count),
+                vm_count,
                 check.display_name,
                 str(check.configured_limit),
+                str(check.current_usage),
                 str(check.required_quota),
                 status
             )
