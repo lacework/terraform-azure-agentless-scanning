@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Literal
+from typing import Dict, List
 from enum import Enum
-from ..helpers.quota import required_regional_vcpu_quota, required_regional_public_ip_quota
 
 
 class IntegrationType(str, Enum):

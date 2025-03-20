@@ -11,6 +11,8 @@ dependencies = [
     "azure-mgmt-network>=28.1.0",
     "azure-mgmt-subscription>=3.1.1",
     "msgraph-sdk>=1.22.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.0.0",
     "rich>=13.9.4",
     "typer>=0.15.1",
 ]
@@ -21,3 +23,8 @@ preflight-check = "preflight_check.preflight_check:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11.1",
+]

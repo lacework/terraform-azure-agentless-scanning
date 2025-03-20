@@ -2,7 +2,7 @@ from typing import List, Dict
 
 from .models import DeploymentConfig, Subscription, Region, UsageQuotaLimit
 from .quota_check import UsageQuotaCheck, TotalVCPUsQuotaCheck, DSFamilyVCPUQuotaCheck, PublicIPQuotaCheck, StandardPublicIPQuotaCheck
-
+from .auth_check import MonitoredSubscriptionAuthCheck, ScanningSubscriptionAuthCheck, AuthCheck
 
 class QuotaChecks:
     subscription: Subscription
@@ -40,13 +40,38 @@ class QuotaChecks:
         return all(check.success for quota_checks in self.quota_checks.values() for check in quota_checks)
 
 
-class PreflightCheck:
-    deployment_config: DeploymentConfig
-    usage_quota_checks: QuotaChecks
+class AuthChecks:
+    scanning_subscription: ScanningSubscriptionAuthCheck
+    monitored_subscriptions: List[MonitoredSubscriptionAuthCheck]
 
     def __init__(self,
                  deployment_config: DeploymentConfig,
-                 usage_quota_limits: Dict[str, Dict[str, UsageQuotaLimit]]):
+                 permissions: Dict[str, List[str]]):
+        self.scanning_subscription = ScanningSubscriptionAuthCheck(
+            deployment_config.scanning_subscription,
+            permissions[deployment_config.scanning_subscription.id]
+        )
+        self.monitored_subscriptions = [
+            MonitoredSubscriptionAuthCheck(
+                subscription,
+                permissions[subscription.id]
+            )
+            for subscription in deployment_config.monitored_subscriptions
+        ]
+
+    def all_checks_pass(self) -> bool:
+        """Return True if all auth checks pass, False otherwise"""
+        return all(check.success for check in self.monitored_subscriptions) and self.scanning_subscription.success
+
+class PreflightCheck:
+    deployment_config: DeploymentConfig
+    usage_quota_checks: QuotaChecks
+    auth_checks: AuthChecks
+
+    def __init__(self,
+                 deployment_config: DeploymentConfig,
+                 usage_quota_limits: Dict[str, Dict[str, UsageQuotaLimit]],
+                 permissions: Dict[str, List[str]]):
         self.deployment_config = deployment_config
         regions = [
             Region(
@@ -64,4 +89,8 @@ class PreflightCheck:
             subscription=deployment_config.scanning_subscription,
             regions=regions,
             use_nat_gateway=deployment_config.use_nat_gateway
+        )
+        self.auth_checks = AuthChecks(
+            deployment_config=deployment_config,
+            permissions=permissions
         )

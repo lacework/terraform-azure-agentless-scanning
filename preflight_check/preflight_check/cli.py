@@ -5,7 +5,7 @@ from rich.table import Table
 from rich.box import HEAVY_EDGE
 
 from .core.models import IntegrationType, Subscription
-from .core.preflight_check import PreflightCheck, QuotaChecks
+from .core.preflight_check import PreflightCheck, QuotaChecks, AuthChecks, AuthCheck
 
 console = Console()
 
@@ -262,6 +262,49 @@ def print_quota_checks(quota_checks: QuotaChecks):
             "Please request quota increases at: https://portal.azure.com/#blade/Microsoft_Azure_Capacity/QuotaRequestBlade")
 
 
+def print_auth_checks(auth_checks: AuthChecks):
+    """Display auth checks across all subscriptions in a table format"""
+    scanning_subscription_auth_check = auth_checks.scanning_subscription
+    monitored_subscriptions_auth_checks = auth_checks.monitored_subscriptions
+
+    # print scanning subscription auth check
+    console.print(f"\n[bold]Scanning Subscription Authorization Checks[/bold]")
+    print_auth_check_table([scanning_subscription_auth_check])
+
+    # print monitored subscriptions auth checks
+    console.print(
+        f"\n[bold]Monitored Subscriptions Authorization Checks[/bold]")
+    print_auth_check_table(monitored_subscriptions_auth_checks)
+
+
+def print_auth_check_table(auth_checks: List[AuthCheck]):
+    """Display auth checks across all subscriptions in a table format"""
+    table = Table(show_header=True, header_style="bold", box=HEAVY_EDGE)
+    table.add_column("Subscription", style="bold cyan")
+    table.add_column("Required Permission", style="magenta")
+    table.add_column("Status", style="")
+
+    print(f'auth_checks (type: {type(auth_checks)}): {auth_checks}')
+
+    for auth_check in auth_checks:
+        printed_subscription_name = False
+        for check in auth_check.checked_permissions:
+            subscription_name = ""
+            if not printed_subscription_name:
+                subscription_name = auth_check.subscription.name
+                printed_subscription_name = True
+            status = "✅" if check.is_granted else "❌"
+            table.add_row(
+                subscription_name,
+                str(check.required_permission),
+                status
+            )
+
+    console.print(table)
+
+
+
 def print_preflight_check(preflight_check: PreflightCheck):
     """Print the preflight check results"""
     print_quota_checks(preflight_check.usage_quota_checks)
+    print_auth_checks(preflight_check.auth_checks)

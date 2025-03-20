@@ -1,9 +1,9 @@
 import typer
-from typing import Annotated, Optional, List
+from typing import Annotated, Optional, List, Dict
 from azure.identity import DefaultAzureCredential
 
-from preflight_check.core import AzureClientFactory, QuotaService, SubscriptionService
-from preflight_check.core import DeploymentConfig, Region, IntegrationType, Subscription
+from preflight_check.core import AzureClientFactory, QuotaService, SubscriptionService, AuthService
+from preflight_check.core import DeploymentConfig, Region, IntegrationType, Subscription, UsageQuotaLimit
 from preflight_check.core import PreflightCheck
 
 from preflight_check import cli
@@ -18,7 +18,7 @@ class App:
     _azure_client_factory: AzureClientFactory
     _subscriptions: SubscriptionService
     _quotas: QuotaService
-
+    _auth: AuthService
     available_subscriptions: List[Subscription]
     deployment_config: Optional[DeploymentConfig] = None
 
@@ -27,6 +27,7 @@ class App:
         azure_client_factory = AzureClientFactory(credential)
         self._subscriptions = SubscriptionService(azure_client_factory)
         self._quotas = QuotaService(azure_client_factory)
+        self._auth = AuthService(azure_client_factory)
         # enumerate all subscriptions available to the authenticated Azure principal
         self.available_subscriptions = self._subscriptions.get_subscriptions()
 
@@ -75,14 +76,10 @@ class App:
 
     def run(self):
         """Run the preflight check"""
-        cli.console.print("Getting usage quota limits...")
-        usage_quota_limits = {
-            region: self._quotas.get_quota_limits(
-                self.deployment_config.scanning_subscription.id, region)
-            for region in self.deployment_config.regions
-        }
+        usage_quota_limits = self._get_usage_quota_limits()
+        permissions = self._get_permissions()
         preflight_check = PreflightCheck(
-            self.deployment_config, usage_quota_limits)
+            self.deployment_config, usage_quota_limits, permissions)
         cli.print_preflight_check(preflight_check)
 
     def _prompt_deployment_config(self):
@@ -126,6 +123,28 @@ class App:
             regions=selected_region_names,
             use_nat_gateway=use_nat_gateway
         )
+
+    def _get_usage_quota_limits(self) -> Dict[Region, List[UsageQuotaLimit]]:
+        cli.console.print("Getting usage quota limits...")
+        return {
+            region: self._quotas.get_quota_limits(
+                self.deployment_config.scanning_subscription.id, region)
+            for region in self.deployment_config.regions
+        }
+
+    def _get_permissions(self) -> Dict[str, List[str]]:
+        cli.console.print("Getting permissions...")
+        # Get permissions for scanning subscription and monitored subscriptions
+        permissions = {
+            subscription.id: self._auth.get_permissions_for_subscription(
+                subscription.id)
+            for subscription in [*self.deployment_config.monitored_subscriptions, self.deployment_config.scanning_subscription]
+        }
+        # Get permissions for the root management group
+        root_management_group_id = self._auth.get_root_management_group_id()
+        permissions[root_management_group_id] = self._auth.get_permissions_for_root_management_group(
+            self.deployment_config.scanning_subscription.id)
+        return permissions
 
     def _print_cli_args_error(self):
         cli.console.print(
