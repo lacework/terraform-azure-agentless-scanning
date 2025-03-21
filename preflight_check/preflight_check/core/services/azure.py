@@ -1,9 +1,9 @@
-from typing import Dict
+
 from azure.identity import DefaultAzureCredential
-from azure.mgmt.subscription import SubscriptionClient
+from azure.mgmt.authorization import AuthorizationManagementClient
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.network import NetworkManagementClient
-from azure.mgmt.authorization import AuthorizationManagementClient
+from azure.mgmt.subscription import SubscriptionClient
 from msgraph import GraphServiceClient
 
 
@@ -14,9 +14,9 @@ class AzureClientFactory:
     principal_id: str
     _subscription_client: SubscriptionClient
     _graph_client: GraphServiceClient
-    _network_clients: Dict[str, NetworkManagementClient] = {}
-    _compute_clients: Dict[str, ComputeManagementClient] = {}
-    _auth_clients: Dict[str, AuthorizationManagementClient] = {}
+    _network_clients: dict[str, NetworkManagementClient] = {}
+    _compute_clients: dict[str, ComputeManagementClient] = {}
+    _auth_clients: dict[str, AuthorizationManagementClient] = {}
 
     def __init__(self, credential: DefaultAzureCredential):
         self.credential = credential

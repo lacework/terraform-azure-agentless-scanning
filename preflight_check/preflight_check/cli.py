@@ -1,18 +1,18 @@
-from typing import List, Tuple
-from rich.console import Console
-from rich.prompt import Prompt, Confirm
-from rich.table import Table
+
 from rich.box import HEAVY_EDGE
+from rich.console import Console
+from rich.prompt import Confirm, Prompt
+from rich.table import Table
 
 from .core.models import IntegrationType, Subscription
-from .core.preflight_check import PreflightCheck, QuotaChecks, AuthChecks, AuthCheck
+from .core.preflight_check import AuthCheck, AuthChecks, PreflightCheck, QuotaChecks
 
 console = Console()
 
 
-def prompt_scanning_subscription(available_subs: List[Subscription]) -> Subscription:
+def prompt_scanning_subscription(available_subs: list[Subscription]) -> Subscription:
     """Prompt user to choose scanning subscription"""
-    console.print(f"\n[bold]Available Subscriptions:[/bold]")
+    console.print("\n[bold]Available Subscriptions:[/bold]")
     print_subscriptions(available_subs)
     console.print("\n[bold]Scanning Subscription[/bold]")
     console.print(
@@ -30,7 +30,7 @@ def prompt_scanning_subscription(available_subs: List[Subscription]) -> Subscrip
     raise ValueError(f"Subscription {sub_id} not found")
 
 
-def prompt_monitored_subscriptions(available_subs: List[Subscription]) -> Tuple[List[Subscription], IntegrationType]:
+def prompt_monitored_subscriptions(available_subs: list[Subscription]) -> tuple[list[Subscription], IntegrationType]:
     """Prompt user to choose which subscriptions to monitor"""
     console.print("\n[bold]Monitored Subscriptions[/bold]")
     console.print("[dim]Choose which subscriptions to be monitored.[/dim]")
@@ -45,7 +45,7 @@ def prompt_monitored_subscriptions(available_subs: List[Subscription]) -> Tuple[
         console.print("[dim]All subscriptions will be monitored.[/dim]")
         return (available_subs, IntegrationType.TENANT)
 
-    elif scan_scope == "exclude":
+    if scan_scope == "exclude":
         console.print(
             "[dim]Select subscriptions to exclude from monitoring.[/dim]")
         print_subscriptions(available_subs)
@@ -69,27 +69,27 @@ def prompt_monitored_subscriptions(available_subs: List[Subscription]) -> Tuple[
         print_subscriptions(excluded_subs)
         return (monitored_subs, IntegrationType.TENANT)
 
-    else:  # specify
-        console.print("[dim]Select specific subscriptions to monitor.[/dim]")
-        print_subscriptions(available_subs)
+    # specify
+    console.print("[dim]Select specific subscriptions to monitor.[/dim]")
+    print_subscriptions(available_subs)
 
-        specified_ids = Prompt.ask(
-            "Specified Subscription IDs (comma-separated)")
-        specified_subs = []
+    specified_ids = Prompt.ask(
+        "Specified Subscription IDs (comma-separated)")
+    specified_subs = []
 
-        for sub_id in [s.strip() for s in specified_ids.split(",")]:
-            for sub in available_subs:
-                if sub.id == sub_id:
-                    specified_subs.append(sub)
-                    break
-            else:
-                console.print(
-                    f"[yellow]Warning: Subscription {sub_id} not found[/yellow]")
+    for sub_id in [s.strip() for s in specified_ids.split(",")]:
+        for sub in available_subs:
+            if sub.id == sub_id:
+                specified_subs.append(sub)
+                break
+        else:
+            console.print(
+                f"[yellow]Warning: Subscription {sub_id} not found[/yellow]")
 
-        console.print(
-            "\n[bold]Only the following subscriptions will be monitored:[/bold]")
-        print_subscriptions(specified_subs)
-        return (specified_subs, IntegrationType.SUBSCRIPTION)
+    console.print(
+        "\n[bold]Only the following subscriptions will be monitored:[/bold]")
+    print_subscriptions(specified_subs)
+    return (specified_subs, IntegrationType.SUBSCRIPTION)
 
 
 def prompt_nat_gateway() -> bool:
@@ -102,7 +102,7 @@ def prompt_nat_gateway() -> bool:
     return Confirm.ask("Use NAT Gateway?", default=True)
 
 
-def print_subscriptions(subscriptions: List[Subscription]):
+def print_subscriptions(subscriptions: list[Subscription]):
     """Display subscriptions in a table"""
     table = Table(box=HEAVY_EDGE)
     table.add_column("Subscription Name", style="cyan")
@@ -114,7 +114,7 @@ def print_subscriptions(subscriptions: List[Subscription]):
     console.print(table)
 
 
-def print_vm_counts(subscriptions: List[Subscription]):
+def print_vm_counts(subscriptions: list[Subscription]):
     """Display VM counts by region for all subscriptions"""
     table = Table(box=HEAVY_EDGE)
     table.add_column("Subscription", style="cyan")
@@ -169,7 +169,7 @@ def print_vm_counts(subscriptions: List[Subscription]):
         print_subscriptions(subscriptions_with_no_vms)
 
 
-def prompt_regions(subscriptions: List[Subscription]) -> List[str]:
+def prompt_regions(subscriptions: list[Subscription]) -> list[str]:
     """
     Prompt user to choose deployment regions.
     Default to regions where VMs were detected.
@@ -207,7 +207,7 @@ def print_quota_checks(quota_checks: QuotaChecks):
     quota_checks_by_region = quota_checks.quota_checks
     scanning_subscription = quota_checks.subscription
 
-    console.print(f"\n[bold]Usage Quota Limits[/bold]")
+    console.print("\n[bold]Usage Quota Limits[/bold]")
     console.print(
         f"Here are the configured and required usage quota limits for subscription [bold]{scanning_subscription.name}[/bold]:\n")
 
@@ -272,16 +272,16 @@ def print_auth_checks(auth_checks: AuthChecks):
     monitored_subscriptions_auth_checks = auth_checks.monitored_subscriptions
 
     # print scanning subscription auth check
-    console.print(f"\n[bold]Scanning Subscription Authorization Checks[/bold]")
+    console.print("\n[bold]Scanning Subscription Authorization Checks[/bold]")
     print_auth_check_table([scanning_subscription_auth_check])
 
     # print monitored subscriptions auth checks
     console.print(
-        f"\n[bold]Monitored Subscriptions Authorization Checks[/bold]")
+        "\n[bold]Monitored Subscriptions Authorization Checks[/bold]")
     print_auth_check_table(monitored_subscriptions_auth_checks)
 
 
-def print_auth_check_table(auth_checks: List[AuthCheck]):
+def print_auth_check_table(auth_checks: list[AuthCheck]):
     """Display auth checks across all subscriptions in a table format"""
     table = Table(show_header=True, header_style="bold", box=HEAVY_EDGE)
     table.add_column("Subscription", style="bold cyan")

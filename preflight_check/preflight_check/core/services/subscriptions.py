@@ -1,20 +1,19 @@
-from typing import Dict, List
-from .azure import AzureClientFactory, SubscriptionClient, ComputeManagementClient
 
-from ..models import Subscription, Region
+from ..models import Region, Subscription
+from .azure import AzureClientFactory, ComputeManagementClient, SubscriptionClient
 
 
 class SubscriptionService:
     """Handles all interactions with Azure Subscriptions"""
 
     _azure: AzureClientFactory
-    _subscriptions: Dict[str, Subscription] = None
+    _subscriptions: dict[str, Subscription] = None
 
-    def __init__(self, azure_client_factory: AzureClientFactory):
+    def __init__(self, azure_client_factory: AzureClientFactory) -> None:
         self.azure_client_factory = azure_client_factory
         self.get_subscriptions()
 
-    def get_subscriptions(self) -> List[Subscription]:
+    def get_subscriptions(self) -> list[Subscription]:
         """
         Get all subscriptions available to the authenticated principal.
 
@@ -33,7 +32,7 @@ class SubscriptionService:
                     for sub in subs
                 }
             except Exception as e:
-                raise RuntimeError(f"Failed to list subscriptions: {str(e)}")
+                raise RuntimeError(f"Failed to list subscriptions: {str(e)}") from e
         return list(self._subscriptions.values())
 
     def get_subscription(self, subscription_id: str) -> Subscription:
@@ -57,7 +56,7 @@ class SubscriptionService:
         """
         try:
             # Track instances by region
-            vm_counts: Dict[str, int] = {}
+            vm_counts: dict[str, int] = {}
 
             # List all VMs in the subscription
             for vm in self._compute_client(subscription.id).virtual_machines.list_all():
@@ -77,7 +76,8 @@ class SubscriptionService:
         except Exception as e:
             # TODO: Better error handling
             raise RuntimeError(
-                f"Failed to count VMs in subscription {subscription.id}: {str(e)}")
+                f"Failed to count VMs in subscription {subscription.id}: {str(e)}"
+            ) from e
 
     def _compute_client(self, subscription_id: str) -> ComputeManagementClient:
         return self.azure_client_factory.get_compute_client(subscription_id)

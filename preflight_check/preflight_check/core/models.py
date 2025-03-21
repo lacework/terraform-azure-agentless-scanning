@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Dict, List
 from enum import Enum
 
 
@@ -29,7 +28,7 @@ class Subscription:
     """Represents an Azure subscription"""
     id: str
     name: str
-    regions: Dict[str, Region]
+    regions: dict[str, Region]
 
     @property
     def total_vms(self) -> int:
@@ -42,6 +41,6 @@ class DeploymentConfig:
     """Configuration for AWLS deployment"""
     integration_type: IntegrationType
     scanning_subscription: Subscription
-    monitored_subscriptions: List[Subscription]
-    regions: List[str]
+    monitored_subscriptions: list[Subscription]
+    regions: list[str]
     use_nat_gateway: bool = True

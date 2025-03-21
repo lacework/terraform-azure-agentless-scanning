@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import List
 
 from .models import Subscription
 
@@ -10,7 +9,7 @@ class Permission:
     resource_type: str
     action: str
 
-    def __init__(self, permission: str):
+    def __init__(self, permission: str) -> None:
         # permission format: "{resourceProvider}/{resourceType}/{action}"
         if permission == "*":
             self.resource_provider = "*"
@@ -31,22 +30,23 @@ class Permission:
                 self.action = parts[1]
                 return
             # "{resourceProvider}/*" -> all actions on all resource types for the resource provider
-            else:
-                self.resource_provider = parts[0]
-                self.resource_type = "*"
-                self.action = "*"
-                return
+            self.resource_provider = parts[0]
+            self.resource_type = "*"
+            self.action = "*"
+            return
         self.resource_provider = parts[0]
         self.resource_type = "/".join(parts[1:-1])
         self.action = parts[-1]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.resource_provider}/{self.resource_type}/{self.action}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Permission(resource_provider={self.resource_provider}, resource_type={self.resource_type}, action={self.action})"
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Permission):
+            return False
         resource_provider_match = self.resource_provider == other.resource_provider \
             or self.resource_provider == "*" \
             or other.resource_provider == "*"
@@ -59,12 +59,14 @@ class Permission:
         return resource_provider_match and resource_type_match and action_match
 
 
-class RequiredPermissionCheck():
+class RequiredPermissionCheck:
     """Represents a permission that must be granted on a subscription"""
     required_permission: Permission
     is_granted: bool = False
 
-    def __init__(self, required_permission: Permission, granted_permissions: List[Permission]):
+    def __init__(
+        self, required_permission: Permission, granted_permissions: list[Permission]
+    ) -> None:
         self.required_permission = required_permission
         self.is_granted = self.required_permission in granted_permissions
 
@@ -73,15 +75,16 @@ class AuthCheck(ABC):
     Base class for MonitoredSubscriptionAuthCheck and ScanningSubscriptionAuthCheck
     """
     subscription: Subscription
-    checked_permissions: List[RequiredPermissionCheck]
+    checked_permissions: list[RequiredPermissionCheck]
 
-    def __init__(self, subscription: Subscription, granted_permission_strings: List[str]):
+    def __init__(self, subscription: Subscription, granted_permission_strings: list[str]) -> None:
         """
         Checks whether the set of permissions granted for a subscription covers the required permissions
-        :param subscription: The subscription to check
-        :type subscription: Subscription
-        :param granted_permissions: The set of permissions that have been granted to the authenticated principal for the subscription
-        :type granted_permissions: List[str]
+
+        Args:
+            subscription: The subscription to check
+            granted_permission_strings: The set of permissions that have been granted to the
+            authenticated principal for the subscription
         """
         self.subscription = subscription
         granted_permissions = [Permission(
@@ -93,22 +96,24 @@ class AuthCheck(ABC):
 
     @property
     @abstractmethod
-    def required_permissions_strings(self) -> List[str]:
+    def required_permissions_strings(self) -> list[str]:
         pass
 
     @property
-    def required_permissions(self) -> List[Permission]:
-        return [Permission(permission_string) for permission_string in self.required_permissions_strings]
+    def required_permissions(self) -> list[Permission]:
+        return [
+            Permission(permission_string) for permission_string in self.required_permissions_strings
+        ]
 
     @property
-    def success(self):
+    def success(self) -> bool:
         return all(check.is_granted for check in self.checked_permissions)
 
 
 class MonitoredSubscriptionAuthCheck(AuthCheck):
     """Defines the permissions required on a monitored subscription"""
     @property
-    def required_permissions_strings(self) -> List[str]:
+    def required_permissions_strings(self) -> list[str]:
         return [
             "Microsoft.Authorization/roleAssignments/write",
             "Microsoft.Authorization/roleAssignments/delete",
@@ -122,7 +127,7 @@ class MonitoredSubscriptionAuthCheck(AuthCheck):
 class ScanningSubscriptionAuthCheck(AuthCheck):
     """Defines the permissions required on the scanning subscription"""
     @property
-    def required_permissions_strings(self) -> List[str]:
+    def required_permissions_strings(self) -> list[str]:
         return [
             "Microsoft.App/jobs/read",
             "Microsoft.App/jobs/write",

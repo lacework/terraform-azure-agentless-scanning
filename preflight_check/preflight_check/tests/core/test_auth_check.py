@@ -1,6 +1,6 @@
 import pytest
 
-from preflight_check.core.auth_check import RequiredPermissionCheck, Permission
+from preflight_check.core.auth_check import Permission, RequiredPermissionCheck
 
 # Test case structure:
 # (required_permission, granted_permissions, expected_result)

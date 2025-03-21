@@ -1,13 +1,20 @@
+from typing import Annotated
+
 import typer
-from typing import Annotated, Optional, List, Dict
 from azure.identity import DefaultAzureCredential
 
-from preflight_check.core import AzureClientFactory, QuotaService, SubscriptionService, AuthService
-from preflight_check.core import DeploymentConfig, Region, IntegrationType, Subscription, UsageQuotaLimit
-from preflight_check.core import PreflightCheck
-
 from preflight_check import cli
-
+from preflight_check.core import (
+    AuthService,
+    AzureClientFactory,
+    DeploymentConfig,
+    IntegrationType,
+    PreflightCheck,
+    QuotaService,
+    Subscription,
+    SubscriptionService,
+    UsageQuotaLimit,
+)
 
 app = typer.Typer()
 
@@ -19,10 +26,10 @@ class App:
     _subscriptions: SubscriptionService
     _quotas: QuotaService
     _auth: AuthService
-    available_subscriptions: List[Subscription]
-    deployment_config: Optional[DeploymentConfig] = None
+    available_subscriptions: list[Subscription]
+    deployment_config: DeploymentConfig | None = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         credential = DefaultAzureCredential()
         azure_client_factory = AzureClientFactory(credential)
         self._subscriptions = SubscriptionService(azure_client_factory)
@@ -31,14 +38,21 @@ class App:
         # enumerate all subscriptions available to the authenticated Azure principal
         self.available_subscriptions = self._subscriptions.get_subscriptions()
 
-    def configure(self, integration_type: IntegrationType, scanning_subscription: str, monitored_subscriptions: str, region_names: str, use_nat_gateway: bool):
+    def configure(
+        self,
+        integration_type: IntegrationType | None,
+        scanning_subscription_input: str | None,
+        monitored_subscriptions_input: str | None,
+        region_names: str | None,
+        use_nat_gateway: bool | None,
+    ) -> None:
         """Configure deployment based on provided args or interactive prompts"""
         args = [
             integration_type,
-            scanning_subscription,
-            monitored_subscriptions,
+            scanning_subscription_input,
+            monitored_subscriptions_input,
             region_names,
-            use_nat_gateway
+            use_nat_gateway,
         ]
         # If no arguments provided, prompt for deployment config interactively
         if all(arg is None for arg in args):
@@ -51,21 +65,27 @@ class App:
         else:
             try:
                 scanning_subscription = self._subscriptions.get_subscription(
-                    scanning_subscription.strip())
-                monitored_subscriptions = [self._subscriptions.get_subscription(
-                    sub_id.strip()) for sub_id in monitored_subscriptions.strip().split(",")]
+                    scanning_subscription_input.strip()
+                )
+                monitored_subscriptions = [
+                    self._subscriptions.get_subscription(sub_id.strip())
+                    for sub_id in monitored_subscriptions_input.strip().split(",")
+                ]
                 for sub in monitored_subscriptions:
                     cli.console.print(
                         f"[dim]Enumerating VMs in {sub.name}...[/dim]")
                     self._subscriptions.get_subscription_vms(sub)
-                valid_region_names = set(
-                    region_name for sub in monitored_subscriptions
-                    for region_name in sub.regions.keys())
-                selected_region_names = [region_name.strip() for region_name in region_names.strip().split(
-                    ",") if region_name.strip() in valid_region_names]
+                valid_region_names = {
+                    region_name for sub in monitored_subscriptions for region_name in sub.regions
+                }
+                selected_region_names = [
+                    region_name.strip()
+                    for region_name in region_names.strip().split(",")
+                    if region_name.strip() in valid_region_names
+                ]
             except ValueError as e:
                 cli.console.print(f"[red]Error: {e}[/red]")
-                raise typer.Exit(1)
+                raise typer.Exit(1) from e
             self.deployment_config = DeploymentConfig(
                 integration_type=integration_type,
                 scanning_subscription=scanning_subscription,
@@ -74,7 +94,7 @@ class App:
                 use_nat_gateway=use_nat_gateway
             )
 
-    def run(self):
+    def run(self) -> None:
         """Run the preflight check"""
         usage_quota_limits = self._get_usage_quota_limits()
         permissions = self._get_permissions()
@@ -82,7 +102,7 @@ class App:
             self.deployment_config, usage_quota_limits, permissions)
         cli.print_preflight_check(preflight_check)
 
-    def _prompt_deployment_config(self):
+    def _prompt_deployment_config(self) -> None:
         available_subscriptions = self._subscriptions.get_subscriptions()
         scanning_subscription = cli.prompt_scanning_subscription(
             available_subscriptions)
@@ -105,6 +125,7 @@ class App:
             sub.regions = {
                 region_name: region
                 for region_name, region in sub.regions.items()
+                if region_name in selected_region_names
             }
 
         # Show filtered VM counts
@@ -124,21 +145,28 @@ class App:
             use_nat_gateway=use_nat_gateway
         )
 
-    def _get_usage_quota_limits(self) -> Dict[Region, List[UsageQuotaLimit]]:
+    def _get_usage_quota_limits(self) -> dict[str, dict[str, UsageQuotaLimit]]:
         cli.console.print("Getting usage quota limits...")
+        if not self.deployment_config:
+            raise RuntimeError("Deployment config not set")
         return {
             region: self._quotas.get_quota_limits(
-                self.deployment_config.scanning_subscription.id, region)
+                self.deployment_config.scanning_subscription.id, region
+            )
             for region in self.deployment_config.regions
         }
 
-    def _get_permissions(self) -> Dict[str, List[str]]:
+    def _get_permissions(self) -> dict[str, list[str]]:
         cli.console.print("Getting permissions...")
+        if not self.deployment_config:
+            raise RuntimeError("Deployment config not set")
         # Get permissions for scanning subscription and monitored subscriptions
         permissions = {
-            subscription.id: self._auth.get_permissions_for_subscription(
-                subscription.id)
-            for subscription in [*self.deployment_config.monitored_subscriptions, self.deployment_config.scanning_subscription]
+            subscription.id: self._auth.get_permissions_for_subscription(subscription.id)
+            for subscription in [
+                *self.deployment_config.monitored_subscriptions,
+                self.deployment_config.scanning_subscription,
+            ]
         }
         # Get permissions for the root management group
         root_management_group_id = self._auth.get_root_management_group_id()
@@ -146,7 +174,7 @@ class App:
             self.deployment_config.scanning_subscription.id)
         return permissions
 
-    def _print_cli_args_error(self):
+    def _print_cli_args_error(self) -> None:
         cli.console.print(
             "[red]Error: When running in non-interactive mode, all arguments must be provided.[/red]")
         cli.console.print("Required arguments:")
@@ -161,46 +189,40 @@ class App:
 @app.command()
 def main(
     integration_type: Annotated[
-        Optional[IntegrationType],
-        typer.Option(
-            "--integration-type",
-            "-i",
-            help="Integration type: tenant or subscription"
-        )
+        IntegrationType | None,
+        typer.Option("--integration-type", "-i", help="Integration type: tenant or subscription"),
     ] = None,
     scanning_subscription: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--scanning-subscription",
             "-s",
-            help="Subscription ID where scanner resources will be deployed"
-        )
+            help="Subscription ID where scanner resources will be deployed",
+        ),
     ] = None,
     monitored_subscriptions: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--monitored-subscriptions",
             "-m",
-            help="Subscription IDs of the subscriptions to monitor with AWLS"
-        )
+            help="Subscription IDs of the subscriptions to monitor with AWLS",
+        ),
     ] = None,
     regions: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
-            "--regions",
-            "-r",
-            help="Azure regions (comma-separated) where scanner will be deployed"
-        )
+            "--regions", "-r", help="Azure regions (comma-separated) where scanner will be deployed"
+        ),
     ] = None,
     use_nat_gateway: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option(
             "--nat-gateway/--no-nat-gateway",
             "-n/-N",
-            help="Use NAT Gateway for optimized networking (recommended for 1000+ VMs)"
-        )
+            help="Use NAT Gateway for optimized networking (recommended for 1000+ VMs)",
+        ),
     ] = None,
-):
+) -> None:
     """
     Preflight check for Azure Agentless Scanner deployment.
     """
@@ -213,4 +235,4 @@ def main(
         raise
     except Exception as e:
         cli.console.print(f"[red]Error: {str(e)}[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
