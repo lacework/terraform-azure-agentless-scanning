@@ -1,109 +1,51 @@
 from abc import ABC, abstractmethod
 
-from .models import Subscription
-
-
-class Permission:
-    """Represents an Azure permission"""
-    resource_provider: str
-    resource_type: str
-    action: str
-
-    def __init__(self, permission: str) -> None:
-        # permission format: "{resourceProvider}/{resourceType}/{action}"
-        if permission == "*":
-            self.resource_provider = "*"
-            self.resource_type = "*"
-            self.action = "*"
-            return
-        parts = permission.split("/")
-        if len(parts) == 1:
-            raise ValueError(f"Invalid permission: {permission}")
-        if len(parts) == 2:
-            # a permission with 2 parts must include a wildcard
-            if "*" not in parts:
-                raise ValueError(f"Invalid permission: {permission}")
-            # "*/{action}" -> {action} on all resource providers and types
-            if parts[0] == "*":
-                self.resource_provider = "*"
-                self.resource_type = "*"
-                self.action = parts[1]
-                return
-            # "{resourceProvider}/*" -> all actions on all resource types for the resource provider
-            self.resource_provider = parts[0]
-            self.resource_type = "*"
-            self.action = "*"
-            return
-        self.resource_provider = parts[0]
-        self.resource_type = "/".join(parts[1:-1])
-        self.action = parts[-1]
-
-    def __str__(self) -> str:
-        return f"{self.resource_provider}/{self.resource_type}/{self.action}"
-
-    def __repr__(self) -> str:
-        return f"Permission(resource_provider={self.resource_provider}, resource_type={self.resource_type}, action={self.action})"
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Permission):
-            return False
-        resource_provider_match = self.resource_provider == other.resource_provider \
-            or self.resource_provider == "*" \
-            or other.resource_provider == "*"
-        resource_type_match = self.resource_type == other.resource_type \
-            or self.resource_type == "*" \
-            or other.resource_type == "*"
-        action_match = self.action == other.action \
-            or self.action == "*" \
-            or other.action == "*"
-        return resource_provider_match and resource_type_match and action_match
+from preflight_check.core.models import AssignedRole, Subscription
 
 
 class RequiredPermissionCheck:
     """Represents a permission that must be granted on a subscription"""
-    required_permission: Permission
-    is_granted: bool = False
 
-    def __init__(
-        self, required_permission: Permission, granted_permissions: list[Permission]
-    ) -> None:
+    required_permission: str
+    is_granted: bool
+    satisfying_role: AssignedRole | None = None
+
+    def __init__(self, required_permission: str, assigned_roles: list[AssignedRole]) -> None:
         self.required_permission = required_permission
-        self.is_granted = self.required_permission in granted_permissions
+        for role in assigned_roles:
+            if role.grants_action(required_permission):
+                self.satisfying_role = role
+                break
+        self.is_granted = self.satisfying_role is not None
+
 
 class AuthCheck(ABC):
     """
     Base class for MonitoredSubscriptionAuthCheck and ScanningSubscriptionAuthCheck
     """
+
     subscription: Subscription
     checked_permissions: list[RequiredPermissionCheck]
 
-    def __init__(self, subscription: Subscription, granted_permission_strings: list[str]) -> None:
+    def __init__(self, subscription: Subscription, assigned_roles: list[AssignedRole]) -> None:
         """
-        Checks whether the set of permissions granted for a subscription covers the required permissions
+        Checks whether the set of assigned roles covers the required permissions
 
         Args:
             subscription: The subscription to check
-            granted_permission_strings: The set of permissions that have been granted to the
-            authenticated principal for the subscription
+            assigned_roles: The set of roles that have been assigned to the authenticated principal
+            for the subscription
         """
         self.subscription = subscription
-        granted_permissions = [Permission(
-            permission_string) for permission_string in granted_permission_strings]
         self.checked_permissions = [
-            RequiredPermissionCheck(required_permission, granted_permissions)
+            RequiredPermissionCheck(required_permission, assigned_roles)
             for required_permission in self.required_permissions
         ]
 
     @property
     @abstractmethod
-    def required_permissions_strings(self) -> list[str]:
+    def required_permissions(self) -> list[str]:
         pass
-
-    @property
-    def required_permissions(self) -> list[Permission]:
-        return [
-            Permission(permission_string) for permission_string in self.required_permissions_strings
-        ]
 
     @property
     def success(self) -> bool:
@@ -112,8 +54,9 @@ class AuthCheck(ABC):
 
 class MonitoredSubscriptionAuthCheck(AuthCheck):
     """Defines the permissions required on a monitored subscription"""
+
     @property
-    def required_permissions_strings(self) -> list[str]:
+    def required_permissions(self) -> list[str]:
         return [
             "Microsoft.Authorization/roleAssignments/write",
             "Microsoft.Authorization/roleAssignments/delete",
@@ -126,8 +69,9 @@ class MonitoredSubscriptionAuthCheck(AuthCheck):
 
 class ScanningSubscriptionAuthCheck(AuthCheck):
     """Defines the permissions required on the scanning subscription"""
+
     @property
-    def required_permissions_strings(self) -> list[str]:
+    def required_permissions(self) -> list[str]:
         return [
             "Microsoft.App/jobs/read",
             "Microsoft.App/jobs/write",
@@ -246,11 +190,6 @@ class ScanningSubscriptionAuthCheck(AuthCheck):
             "Microsoft.Storage/storageAccounts/blobServices/containers/read",
             "Microsoft.Storage/storageAccounts/blobServices/containers/write",
             "Microsoft.Storage/storageAccounts/blobServices/containers/delete",
-            "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read",
-            "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write",
-            "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/delete",
-            "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/move/action",
-            "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/lease/action",
             "Microsoft.Storage/storageAccounts/fileServices/read",
             "Microsoft.Storage/storageAccounts/fileServices/write",
             "Microsoft.Storage/storageAccounts/fileServices/delete",

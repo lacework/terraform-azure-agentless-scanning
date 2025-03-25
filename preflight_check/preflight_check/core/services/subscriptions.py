@@ -1,33 +1,32 @@
-
-from ..models import Region, Subscription
-from .azure import AzureClientFactory, ComputeManagementClient, SubscriptionClient
+from .. import models
+from . import azure
 
 
 class SubscriptionService:
-    """Handles all interactions with Azure Subscriptions"""
+    """Handles all interactions with Azure models.Subscriptions"""
 
-    _azure: AzureClientFactory
-    _subscriptions: dict[str, Subscription] = None
+    _azure: azure.AzureClientFactory
+    _subscriptions: dict[str, models.Subscription] = {}
 
-    def __init__(self, azure_client_factory: AzureClientFactory) -> None:
+    def __init__(self, azure_client_factory: azure.AzureClientFactory) -> None:
         self.azure_client_factory = azure_client_factory
         self.get_subscriptions()
 
-    def get_subscriptions(self) -> list[Subscription]:
+    def get_subscriptions(self) -> list[models.Subscription]:
         """
         Get all subscriptions available to the authenticated principal.
 
         Returns:
-            List of Subscription objects
+            List of models.Subscription objects
         """
         if not self._subscriptions:
             try:
                 subs = self._subscription_client().subscriptions.list()
                 self._subscriptions = {
-                    sub.subscription_id: Subscription(
-                        id=sub.subscription_id,
-                        name=sub.display_name,
-                        regions={}  # Empty initially, populated when needed
+                    sub.subscription_id: models.Subscription(
+                        id=sub.subscription_id or "",
+                        name=sub.display_name or "",
+                        regions={},  # Empty initially, populated when needed
                     )
                     for sub in subs
                 }
@@ -35,15 +34,15 @@ class SubscriptionService:
                 raise RuntimeError(f"Failed to list subscriptions: {str(e)}") from e
         return list(self._subscriptions.values())
 
-    def get_subscription(self, subscription_id: str) -> Subscription:
+    def get_subscription(self, subscription_id: str) -> models.Subscription:
         """
         Get a subscription by ID.
         """
         if subscription_id not in self._subscriptions:
-            raise ValueError(f"Subscription {subscription_id} not found")
+            raise ValueError(f"models.Subscription {subscription_id} not found")
         return self._subscriptions[subscription_id]
 
-    def get_subscription_vms(self, subscription: Subscription) -> Subscription:
+    def get_subscription_vms(self, subscription: models.Subscription) -> models.Subscription:
         """
         Count VMs in each region for a subscription.
         Updates the subscription's regions with VM counts.
@@ -52,7 +51,7 @@ class SubscriptionService:
             subscription: The subscription to enumerate
 
         Returns:
-            Updated Subscription object with region VM counts
+            Updated models.Subscription object with region VM counts
         """
         try:
             # Track instances by region
@@ -65,7 +64,7 @@ class SubscriptionService:
 
             # Convert to Region objects
             subscription.regions = {
-                region_name: Region(name=region_name, vm_count=vm_count)
+                region_name: models.Region(name=region_name, vm_count=vm_count)
                 for region_name, vm_count in vm_counts.items()
             }
 
@@ -79,8 +78,8 @@ class SubscriptionService:
                 f"Failed to count VMs in subscription {subscription.id}: {str(e)}"
             ) from e
 
-    def _compute_client(self, subscription_id: str) -> ComputeManagementClient:
+    def _compute_client(self, subscription_id: str) -> azure.ComputeManagementClient:
         return self.azure_client_factory.get_compute_client(subscription_id)
 
-    def _subscription_client(self) -> SubscriptionClient:
+    def _subscription_client(self) -> azure.SubscriptionClient:
         return self.azure_client_factory.get_subscription_client()

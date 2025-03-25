@@ -4,8 +4,8 @@ from rich.console import Console
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
+from .core import AuthCheck, AuthChecks, PreflightCheck, QuotaChecks
 from .core.models import IntegrationType, Subscription
-from .core.preflight_check import AuthCheck, AuthChecks, PreflightCheck, QuotaChecks
 
 console = Console()
 
@@ -102,7 +102,7 @@ def prompt_nat_gateway() -> bool:
     return Confirm.ask("Use NAT Gateway?", default=True)
 
 
-def print_subscriptions(subscriptions: list[Subscription]):
+def print_subscriptions(subscriptions: list[Subscription]) -> None:
     """Display subscriptions in a table"""
     table = Table(box=HEAVY_EDGE)
     table.add_column("Subscription Name", style="cyan")
@@ -114,7 +114,7 @@ def print_subscriptions(subscriptions: list[Subscription]):
     console.print(table)
 
 
-def print_vm_counts(subscriptions: list[Subscription]):
+def print_vm_counts(subscriptions: list[Subscription]) -> None:
     """Display VM counts by region for all subscriptions"""
     table = Table(box=HEAVY_EDGE)
     table.add_column("Subscription", style="cyan")
@@ -176,9 +176,7 @@ def prompt_regions(subscriptions: list[Subscription]) -> list[str]:
     Returns list of selected region names.
     """
     # Get unique regions across all subscriptions
-    detected_regions = set(
-        region_name for sub in subscriptions
-        for region_name in sub.regions.keys())
+    detected_regions = {region_name for sub in subscriptions for region_name in sub.regions}
     console.print("\n[bold]Deployment Regions[/bold]")
     console.print(
         "[dim]Enter the Azure regions that you'd like to monitor.[/dim]")
@@ -190,6 +188,7 @@ def prompt_regions(subscriptions: list[Subscription]) -> list[str]:
         "Azure regions (comma-separated)",
         default=regions_default
     )
+    assert isinstance(regions_input, str)
     selected_regions = []
     for region_input in regions_input.strip().split(","):
         if region_input.strip() in detected_regions:
@@ -202,7 +201,7 @@ def prompt_regions(subscriptions: list[Subscription]) -> list[str]:
     return selected_regions
 
 
-def print_quota_checks(quota_checks: QuotaChecks):
+def print_quota_checks(quota_checks: QuotaChecks) -> None:
     """Display usage quota checks across all regions in a table format"""
     quota_checks_by_region = quota_checks.quota_checks
     scanning_subscription = quota_checks.subscription
@@ -266,7 +265,7 @@ def print_quota_checks(quota_checks: QuotaChecks):
             "Please request quota increases at: https://portal.azure.com/#blade/Microsoft_Azure_Capacity/QuotaRequestBlade")
 
 
-def print_auth_checks(auth_checks: AuthChecks):
+def print_auth_checks(auth_checks: AuthChecks) -> None:
     """Display auth checks across all subscriptions in a table format"""
     scanning_subscription_auth_check = auth_checks.scanning_subscription
     monitored_subscriptions_auth_checks = auth_checks.monitored_subscriptions
@@ -281,14 +280,12 @@ def print_auth_checks(auth_checks: AuthChecks):
     print_auth_check_table(monitored_subscriptions_auth_checks)
 
 
-def print_auth_check_table(auth_checks: list[AuthCheck]):
+def print_auth_check_table(auth_checks: list[AuthCheck]) -> None:
     """Display auth checks across all subscriptions in a table format"""
     table = Table(show_header=True, header_style="bold", box=HEAVY_EDGE)
     table.add_column("Subscription", style="bold cyan")
     table.add_column("Required Permission", style="magenta")
-    table.add_column("Status", style="")
-
-    print(f'auth_checks (type: {type(auth_checks)}): {auth_checks}')
+    table.add_column("Satisfying Role", style="")
 
     for auth_check in auth_checks:
         printed_subscription_name = False
@@ -297,18 +294,18 @@ def print_auth_check_table(auth_checks: list[AuthCheck]):
             if not printed_subscription_name:
                 subscription_name = auth_check.subscription.name
                 printed_subscription_name = True
-            status = "✅" if check.is_granted else "❌"
-            table.add_row(
-                subscription_name,
-                str(check.required_permission),
-                status
+            satisfying_role = (
+                f"[green]'{check.satisfying_role.name}' on scope '{check.satisfying_role.scope}'[/green]"
+                if check.satisfying_role
+                else "[red]N/A[/red]"
             )
+            table.add_row(subscription_name, str(check.required_permission), satisfying_role)
 
     console.print(table)
 
 
 
-def print_preflight_check(preflight_check: PreflightCheck):
+def print_preflight_check(preflight_check: PreflightCheck) -> None:
     """Print the preflight check results"""
     print_quota_checks(preflight_check.usage_quota_checks)
     print_auth_checks(preflight_check.auth_checks)

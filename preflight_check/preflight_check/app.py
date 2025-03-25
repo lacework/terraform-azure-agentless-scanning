@@ -4,17 +4,7 @@ import typer
 from azure.identity import DefaultAzureCredential
 
 from preflight_check import cli
-from preflight_check.core import (
-    AuthService,
-    AzureClientFactory,
-    DeploymentConfig,
-    IntegrationType,
-    PreflightCheck,
-    QuotaService,
-    Subscription,
-    SubscriptionService,
-    UsageQuotaLimit,
-)
+from preflight_check.core import PreflightCheck, models, services
 
 app = typer.Typer()
 
@@ -22,25 +12,25 @@ app = typer.Typer()
 class App:
     """Orchestrates the preflight check process"""
 
-    _azure_client_factory: AzureClientFactory
-    _subscriptions: SubscriptionService
-    _quotas: QuotaService
-    _auth: AuthService
-    available_subscriptions: list[Subscription]
-    deployment_config: DeploymentConfig | None = None
+    _azure_client_factory: services.AzureClientFactory
+    _subscriptions: services.SubscriptionService
+    _quotas: services.QuotaService
+    _auth: services.AuthService
+    available_subscriptions: list[models.Subscription]
+    deployment_config: models.DeploymentConfig | None = None
 
     def __init__(self) -> None:
         credential = DefaultAzureCredential()
-        azure_client_factory = AzureClientFactory(credential)
-        self._subscriptions = SubscriptionService(azure_client_factory)
-        self._quotas = QuotaService(azure_client_factory)
-        self._auth = AuthService(azure_client_factory)
+        azure_client_factory = services.AzureClientFactory(credential)
+        self._subscriptions = services.SubscriptionService(azure_client_factory)
+        self._quotas = services.QuotaService(azure_client_factory)
+        self._auth = services.AuthService(azure_client_factory)
         # enumerate all subscriptions available to the authenticated Azure principal
         self.available_subscriptions = self._subscriptions.get_subscriptions()
 
     def configure(
         self,
-        integration_type: IntegrationType | None,
+        integration_type: models.IntegrationType | None,
         scanning_subscription_input: str | None,
         monitored_subscriptions_input: str | None,
         region_names: str | None,
@@ -64,6 +54,10 @@ class App:
         # Otherwise, create the deployment config using provided args
         else:
             try:
+                assert isinstance(scanning_subscription_input, str)
+                assert isinstance(monitored_subscriptions_input, str)
+                assert isinstance(region_names, str)
+                assert isinstance(use_nat_gateway, bool)
                 scanning_subscription = self._subscriptions.get_subscription(
                     scanning_subscription_input.strip()
                 )
@@ -86,12 +80,12 @@ class App:
             except ValueError as e:
                 cli.console.print(f"[red]Error: {e}[/red]")
                 raise typer.Exit(1) from e
-            self.deployment_config = DeploymentConfig(
+            self.deployment_config = models.DeploymentConfig(
                 integration_type=integration_type,
                 scanning_subscription=scanning_subscription,
                 monitored_subscriptions=monitored_subscriptions,
                 regions=selected_region_names,
-                use_nat_gateway=use_nat_gateway
+                use_nat_gateway=use_nat_gateway,
             )
 
     def run(self) -> None:
@@ -137,15 +131,15 @@ class App:
         # Get NAT Gateway preference
         use_nat_gateway = cli.prompt_nat_gateway()
 
-        self.deployment_config = DeploymentConfig(
+        self.deployment_config = models.DeploymentConfig(
             integration_type=integration_type,
             scanning_subscription=scanning_subscription,
             monitored_subscriptions=monitored_subscriptions,
             regions=selected_region_names,
-            use_nat_gateway=use_nat_gateway
+            use_nat_gateway=use_nat_gateway,
         )
 
-    def _get_usage_quota_limits(self) -> dict[str, dict[str, UsageQuotaLimit]]:
+    def _get_usage_quota_limits(self) -> dict[str, dict[str, models.UsageQuotaLimit]]:
         cli.console.print("Getting usage quota limits...")
         if not self.deployment_config:
             raise RuntimeError("Deployment config not set")
@@ -156,23 +150,19 @@ class App:
             for region in self.deployment_config.regions
         }
 
-    def _get_permissions(self) -> dict[str, list[str]]:
+    def _get_permissions(self) -> dict[str, list[models.AssignedRole]]:
         cli.console.print("Getting permissions...")
         if not self.deployment_config:
             raise RuntimeError("Deployment config not set")
         # Get permissions for scanning subscription and monitored subscriptions
-        permissions = {
-            subscription.id: self._auth.get_permissions_for_subscription(subscription.id)
-            for subscription in [
-                *self.deployment_config.monitored_subscriptions,
-                self.deployment_config.scanning_subscription,
-            ]
-        }
-        # Get permissions for the root management group
-        root_management_group_id = self._auth.get_root_management_group_id()
-        permissions[root_management_group_id] = self._auth.get_permissions_for_root_management_group(
-            self.deployment_config.scanning_subscription.id)
-        return permissions
+        subscriptions = [
+            *self.deployment_config.monitored_subscriptions,
+            self.deployment_config.scanning_subscription,
+        ]
+        include_root_management_group = (
+            self.deployment_config.integration_type == models.IntegrationType.TENANT
+        )
+        return self._auth.get_all_assigned_roles(subscriptions, include_root_management_group)
 
     def _print_cli_args_error(self) -> None:
         cli.console.print(
@@ -189,7 +179,7 @@ class App:
 @app.command()
 def main(
     integration_type: Annotated[
-        IntegrationType | None,
+        models.IntegrationType | None,
         typer.Option("--integration-type", "-i", help="Integration type: tenant or subscription"),
     ] = None,
     scanning_subscription: Annotated[

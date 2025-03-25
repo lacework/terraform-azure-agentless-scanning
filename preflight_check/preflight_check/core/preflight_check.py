@@ -1,5 +1,11 @@
-from .auth_check import MonitoredSubscriptionAuthCheck, ScanningSubscriptionAuthCheck
-from .models import DeploymentConfig, Region, Subscription, UsageQuotaLimit
+from .auth_check import AuthCheck, MonitoredSubscriptionAuthCheck, ScanningSubscriptionAuthCheck
+from .models import (
+    AssignedRole,
+    DeploymentConfig,
+    Region,
+    Subscription,
+    UsageQuotaLimit,
+)
 from .quota_check import (
     DSFamilyVCPUQuotaCheck,
     PublicIPQuotaCheck,
@@ -49,18 +55,18 @@ class QuotaChecks:
 
 
 class AuthChecks:
-    scanning_subscription: ScanningSubscriptionAuthCheck
-    monitored_subscriptions: list[MonitoredSubscriptionAuthCheck]
+    scanning_subscription: AuthCheck
+    monitored_subscriptions: list[AuthCheck]
 
     def __init__(
-        self, deployment_config: DeploymentConfig, permissions: dict[str, list[str]]
+        self, deployment_config: DeploymentConfig, assigned_roles: dict[str, list[AssignedRole]]
     ) -> None:
         self.scanning_subscription = ScanningSubscriptionAuthCheck(
             deployment_config.scanning_subscription,
-            permissions[deployment_config.scanning_subscription.id],
+            assigned_roles[deployment_config.scanning_subscription.id],
         )
         self.monitored_subscriptions = [
-            MonitoredSubscriptionAuthCheck(subscription, permissions[subscription.id])
+            MonitoredSubscriptionAuthCheck(subscription, assigned_roles[subscription.id])
             for subscription in deployment_config.monitored_subscriptions
         ]
 
@@ -81,7 +87,7 @@ class PreflightCheck:
         self,
         deployment_config: DeploymentConfig,
         usage_quota_limits: dict[str, dict[str, UsageQuotaLimit]],
-        permissions: dict[str, list[str]],
+        assigned_roles: dict[str, list[AssignedRole]],
     ) -> None:
         self.deployment_config = deployment_config
         regions = [
@@ -100,4 +106,7 @@ class PreflightCheck:
             regions=regions,
             use_nat_gateway=deployment_config.use_nat_gateway,
         )
-        self.auth_checks = AuthChecks(deployment_config=deployment_config, permissions=permissions)
+        self.auth_checks = AuthChecks(
+            deployment_config=deployment_config,
+            assigned_roles=assigned_roles,
+        )

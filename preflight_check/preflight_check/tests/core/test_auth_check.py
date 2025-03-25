@@ -1,77 +1,90 @@
 import pytest
 
-from preflight_check.core.auth_check import Permission, RequiredPermissionCheck
-
-# Test case structure:
-# (required_permission, granted_permissions, expected_result)
-test_cases = [
-    # Direct matches
-    ("Microsoft.Storage/storageAccounts/read",
-     ["Microsoft.Storage/storageAccounts/read"], True),
-    ("Microsoft.KeyVault/vaults/read",
-     ["Microsoft.KeyVault/vaults/read", "Microsoft.Storage/storageAccounts/write"], True),
-
-    # Non-matches
-    ("Microsoft.Storage/storageAccounts/read",
-     ["Microsoft.Storage/storageAccounts/write"], False),
-    ("Microsoft.Storage/storageAccounts/read",
-     ["Microsoft.KeyVault/vaults/read"], False),
-    ("Microsoft.Storage/storageAccounts/read", [], False),
-
-    # Global wildcards (*/action)
-    ("Microsoft.Storage/storageAccounts/read", ["*/read"], True),
-    ("Microsoft.KeyVault/vaults/secrets/read", ["*/read"], True),
-    ("Microsoft.Storage/storageAccounts/write", ["*/read"], False),
-
-    # Namespace wildcards (Microsoft.Storage/*)
-    ("Microsoft.Storage/storageAccounts/read", ["Microsoft.Storage/*"], True),
-    ("Microsoft.Storage/storageAccounts/write", ["Microsoft.Storage/*"], True),
-    ("Microsoft.Storage/storageAccounts/blobServices/containers/read",
-     ["Microsoft.Storage/*"], False),
-    ("Microsoft.KeyVault/vaults/read", ["Microsoft.Storage/*"], False),
-
-    # Namespace level checking for wildcards
-    ("Microsoft.StorageSync/storageSyncServices/read",
-     ["Microsoft.Storage/*"], False),
-
-    # Middle wildcards (Microsoft.Storage/*/action)
-    ("Microsoft.Storage/storageAccounts/read",
-     ["Microsoft.Storage/*/read"], True),
-    ("Microsoft.Storage/blobServices/read",
-     ["Microsoft.Storage/*/read"], True),
-    ("Microsoft.Storage/storageAccounts/blobServices/read",
-     ["Microsoft.Storage/*/read"], False),
-
-    # Complex cases - multiple levels
-    ("Microsoft.Storage/storageAccounts/blobServices/containers/read",
-     ["Microsoft.Storage/storageAccounts/blobServices/*"], True),
-    ("Microsoft.Storage/storageAccounts/fileServices/shares/read",
-     ["Microsoft.Storage/storageAccounts/*/shares/read"], True),
-    ("Microsoft.Storage/storageAccounts/fileServices/shares/write",
-     ["Microsoft.Storage/storageAccounts/*/shares/read"], False),
-
-    # Multiple permissions granted, only one needs to match
-    ("Microsoft.Storage/storageAccounts/read",
-     ["Microsoft.KeyVault/*", "Microsoft.Network/*", "Microsoft.Storage/*"], True),
-
-    # Edge cases
-    ("*/read", ["*/read"], True),  # Wildcard matching wildcard
-]
+from preflight_check.core.auth_check import RequiredPermissionCheck
+from preflight_check.core.models.auth import AssignedRole, Principal, RolePermissions
 
 
 class TestRequiredPermissionCheck:
     """Test the RequiredPermissionCheck class"""
 
-    @pytest.mark.parametrize("required_permission_string,granted_permissions_strings,expected", test_cases)
-    def test_permission_matching(self, required_permission_string, granted_permissions_strings, expected):
-        """Test permission matching with various patterns"""
-        # Arrange & Act
-        required_permission = Permission(required_permission_string)
-        granted_permissions = [Permission(permission_string)
-                               for permission_string in granted_permissions_strings]
-        check = RequiredPermissionCheck(
-            required_permission, granted_permissions)
+    principal = Principal(
+        id="compute_write_only",
+        type="User",
+    )
 
-        # Assert
-        assert check.is_granted == expected, \
-            f"Required: {required_permission_string}, Granted: {granted_permissions_strings}, Expected: {expected}, Got: {check.is_granted}"
+    assigned_roles: list[AssignedRole] = [
+        AssignedRole(
+            id="compute_write_only",
+            name="Compute Write Only",
+            scope="*",
+            principal=principal,
+            permissions=RolePermissions(
+                actions=[
+                    "Microsoft.Compute/*/write",
+                ],
+            ),
+        ),
+        AssignedRole(
+            id="storage_all_actions_no_child_types",
+            name="Storage All Actions (No Child Types)",
+            scope="*",
+            principal=principal,
+            permissions=RolePermissions(
+                actions=[
+                    "Microsoft.Storage/*",
+                ],
+                not_actions=[
+                    "Microsoft.Storage/storageAccounts/listkeys/*",
+                    "Microsoft.Storage/storageAccounts/blobServices/*",
+                ],
+            ),
+        ),
+        AssignedRole(
+            id="allow_all_reads",
+            name="Allow All Reads",
+            scope="*",
+            principal=principal,
+            permissions=RolePermissions(
+                actions=[
+                    "*/read",
+                ],
+            ),
+        ),
+    ]
+
+    @pytest.mark.parametrize(
+        "required_permission,expected,satisfying_role_id",
+        [
+            ("Microsoft.Compute/virtualMachines/read", True, "allow_all_reads"),
+            ("Microsoft.Compute/virtualMachines/write", True, "compute_write_only"),
+            (
+                "Microsoft.Storage/storageAccounts/read",
+                True,
+                ["storage_all_actions_no_child_types", "allow_all_reads"],
+            ),
+            ("Microsoft.Storage/storageAccounts/write", True, "storage_all_actions_no_child_types"),
+            ("Microsoft.Storage/storageAccounts/listkeys/action", False, None),
+            ("Microsoft.Compute/virtualMachines/delete", False, None),
+        ],
+    )
+    def test_permission_matching(
+        self,
+        required_permission: str,
+        expected: bool,
+        satisfying_role_id: str | list[str] | None,
+    ) -> None:
+        """Test permission matching with various patterns"""
+        check = RequiredPermissionCheck(
+            required_permission,
+            self.assigned_roles,
+        )
+
+        assert check.is_granted == expected
+        if expected:
+            assert check.satisfying_role is not None
+            if isinstance(satisfying_role_id, list):
+                assert check.satisfying_role.id in satisfying_role_id
+            else:
+                assert check.satisfying_role.id == satisfying_role_id
+        else:
+            assert check.satisfying_role is None

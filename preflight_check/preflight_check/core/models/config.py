@@ -8,17 +8,9 @@ class IntegrationType(str, Enum):
 
 
 @dataclass
-class UsageQuotaLimit:
-    """Represents an Azure usage quota limit"""
-    name: str
-    display_name: str
-    limit: int
-    usage: int
-
-
-@dataclass
 class Region:
     """Represents an Azure region with VM counts and quota requirements"""
+
     name: str
     vm_count: int
 
@@ -26,6 +18,7 @@ class Region:
 @dataclass
 class Subscription:
     """Represents an Azure subscription"""
+
     id: str
     name: str
     regions: dict[str, Region]
@@ -39,6 +32,7 @@ class Subscription:
 @dataclass
 class DeploymentConfig:
     """Configuration for AWLS deployment"""
+
     integration_type: IntegrationType
     scanning_subscription: Subscription
     monitored_subscriptions: list[Subscription]

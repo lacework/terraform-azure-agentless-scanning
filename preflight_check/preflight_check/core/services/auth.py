@@ -3,6 +3,8 @@ import asyncio
 from azure.mgmt.authorization.v2022_04_01.models import RoleAssignment, RoleDefinition
 from msgraph import GraphServiceClient
 
+from preflight_check.core import models
+
 from .azure import AuthorizationManagementClient, AzureClientFactory
 
 
@@ -15,76 +17,131 @@ class AuthService:
 
     """Map from role definition ID to role definition"""
     _role_definitions: dict[str, RoleDefinition] = {}
+    """Map from role definition ID to role permissions"""
+    _role_permissions: dict[str, models.RolePermissions] = {}
 
     def __init__(self, azure_client_factory: AzureClientFactory) -> None:
         self._azure_client_factory = azure_client_factory
         self._principal_id, self._tenant_id = asyncio.run(
             self._get_principal_and_tenant_id())
 
-    def get_permissions_for_subscription(self, subscription_id: str) -> list[str]:
+    def get_all_assigned_roles(
+        self,
+        subscriptions: list[models.Subscription],
+        include_root_management_group: bool = True,
+    ) -> dict[str, list[models.AssignedRole]]:
         """
-        Lists the permissions that the authenticated principal has for a subscription.
+        Lists all roles that the authenticated principal has for a list of subscriptions.
+        """
+        assigned_roles = {}
+        for subscription in subscriptions:
+            assigned_roles[subscription.id] = self._get_assigned_roles_for_subscription(
+                subscription.id
+            )
+        if include_root_management_group:
+            root_roles = self._get_assigned_roles_for_root_management_group(subscriptions[0].id)
+            assigned_roles[self.get_root_management_group_id()] = root_roles
+        return assigned_roles
 
-        Returns:
-            List of permissions
+    # def get_assigned_roles_for_subscription(
+    #     self,
+    #     subscription_id: str,
+    # ) -> list[models.AssignedRole]:
+    #     """
+    #     Lists the roles that the authenticated principal has for a subscription.
+    #     """
+    #     auth_client = self._auth_client(subscription_id)
+    #     role_assignments = auth_client.role_assignments.list_for_subscription(
+    #         filter=f"assignedTo('{self._principal_id}')"
+    #     )
+    #     assigned_roles = []
+    #     for role_assignment in role_assignments:
+    #         role_definition = self._get_role_definition(
+    #             subscription_id, role_assignment.role_definition_id)
+    #         assigned_roles.append(self._create_role(role_assignment, role_definition))
+    #     return assigned_roles
+
+    def _get_assigned_roles_for_subscription(
+        self,
+        subscription_id: str,
+    ) -> list[models.AssignedRole]:
         """
-        # List role assignments
-        auth_client = self._auth_client(subscription_id)
-        role_assignments = auth_client.role_assignments.list_for_subscription(
-            filter=f"assignedTo('{self._principal_id}')"
+        Lists the roles that the authenticated principal has for a subscription.
+        """
+        return self._get_assigned_roles_for_scope(
+            subscription_id, f"/subscriptions/{subscription_id}"
         )
-        # Get permissions from role assignments
-        return self._get_permissions_from_role_assignment_list(subscription_id, role_assignments)
 
-    def get_permissions_for_root_management_group(self, subscription_id: str) -> list[str]:
+    def _get_assigned_roles_for_root_management_group(
+        self, subscription_id: str
+    ) -> list[models.AssignedRole]:
         """
-        Lists the permissions that the authenticated principal has for the root management group.
+        Lists the roles that the authenticated principal has for the root management group.
+        """
+        return self._get_assigned_roles_for_scope(
+            subscription_id, self.get_root_management_group_id()
+        )
 
-        Returns:
-            List of permissions
+    def _get_assigned_roles_for_scope(
+        self,
+        subscription_id: str,
+        scope: str,
+    ) -> list[models.AssignedRole]:
+        """
+        Lists the roles that the authenticated principal has for a scope.
         """
         auth_client = self._auth_client(subscription_id)
         role_assignments = auth_client.role_assignments.list_for_scope(
-            self.get_root_management_group_id(),
-            filter=f"assignedTo('{self._principal_id}')"
+            scope, filter=f"assignedTo('{self._principal_id}')"
         )
-        return self._get_permissions_from_role_assignment_list(subscription_id, role_assignments)
-
-    def _get_permissions_from_role_assignment_list(
-        self, subscription_id: str, role_assignments: list[RoleAssignment]
-    ) -> list[str]:
-        """
-        Get permissions from a list of role assignments.
-        """
-        return [
-            permission
-            for role_assignment in role_assignments
-            for permission in self._get_permissions_from_role_assignment(
-                subscription_id, role_assignment
+        assigned_roles = []
+        for role_assignment in role_assignments:
+            role_definition = self._get_role_definition(
+                subscription_id, role_assignment.role_definition_id
             )
-        ]
+            assigned_roles.append(self._create_role(role_assignment, role_definition))
+        return assigned_roles
 
-    def _get_permissions_from_role_assignment(
-        self, subscription_id: str, assignment: RoleAssignment
-    ) -> list[str]:
+    def _create_role(
+        self,
+        role_assignment: RoleAssignment,
+        role_definition: RoleDefinition,
+    ) -> models.AssignedRole:
         """
-        Get permissions from a role assignment.
+        Create a Role object from an Azure RoleAssignment and RoleDefinition.
+        """
+        return models.AssignedRole(
+            id=role_assignment.role_definition_id or "",
+            name=role_definition.role_name or "",
+            scope=role_assignment.scope or "",
+            principal=models.Principal(
+                id=role_assignment.principal_id or "",
+                type=role_assignment.principal_type or "",
+            ),
+            permissions=self._get_permissions_from_role_definition(role_definition),
+            condition=role_assignment.condition or None,
+        )
+
+    def _get_permissions_from_role_definition(
+        self, role_definition: RoleDefinition
+    ) -> models.RolePermissions:
+        """
+        Get permissions from a role definition.
 
         Returns:
             List of permissions
         """
-        role_definition_id = assignment.role_definition_id
-        if not role_definition_id:
-            return []
-        # get role definition
-        role_definition = self._get_role_definition(
-            subscription_id, role_definition_id)
-        # get permissions from role definition
-        return [
-            action
-            for permission in role_definition.permissions or []
-            for action in permission.actions or []
-        ]
+        if role_definition.id not in self._role_permissions:
+            if not role_definition.permissions:
+                raise ValueError("Role definition has no permissions")
+            permissions = models.RolePermissions()
+            for permission in role_definition.permissions:
+                permissions.actions.extend(permission.actions or [])
+                permissions.not_actions.extend(permission.not_actions or [])
+                permissions.data_actions.extend(permission.data_actions or [])
+                permissions.not_data_actions.extend(permission.not_data_actions or [])
+            self._role_permissions[role_definition.id] = permissions
+        return self._role_permissions[role_definition.id]
 
     def _get_role_definition(self, subscription_id: str, role_definition_id: str) -> RoleDefinition:
         """

@@ -3,7 +3,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from math import ceil
 
-from .models import Region, UsageQuotaLimit
+from .models.config import Region
+from .models.quota import UsageQuotaLimit
 
 
 @dataclass

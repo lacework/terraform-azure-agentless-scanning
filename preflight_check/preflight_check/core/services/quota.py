@@ -1,5 +1,5 @@
 
-from ..models import UsageQuotaLimit
+from ..models.quota import UsageQuotaLimit
 from .azure import AzureClientFactory, ComputeManagementClient, NetworkManagementClient
 
 
