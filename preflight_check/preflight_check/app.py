@@ -58,6 +58,7 @@ class App:
                 assert isinstance(monitored_subscriptions_input, str)
                 assert isinstance(region_names, str)
                 assert isinstance(use_nat_gateway, bool)
+                assert isinstance(integration_type, models.IntegrationType)
                 scanning_subscription = self._subscriptions.get_subscription(
                     scanning_subscription_input.strip()
                 )
@@ -88,13 +89,16 @@ class App:
                 use_nat_gateway=use_nat_gateway,
             )
 
-    def run(self) -> None:
+    def run(self, output_path: str) -> None:
         """Run the preflight check"""
+        if not self.deployment_config:
+            raise RuntimeError("Deployment config not set")
         usage_quota_limits = self._get_usage_quota_limits()
         permissions = self._get_permissions()
         preflight_check = PreflightCheck(
             self.deployment_config, usage_quota_limits, permissions)
         cli.print_preflight_check(preflight_check)
+        cli.output_preflight_check_results_file(preflight_check, path=output_path)
 
     def _prompt_deployment_config(self) -> None:
         available_subscriptions = self._subscriptions.get_subscriptions()
@@ -212,6 +216,10 @@ def main(
             help="Use NAT Gateway for optimized networking (recommended for 1000+ VMs)",
         ),
     ] = None,
+    output_path: Annotated[
+        str,
+        typer.Option("--output-path", "-o", help="Path to output the preflight check results"),
+    ] = "./preflight_report.json",
 ) -> None:
     """
     Preflight check for Azure Agentless Scanner deployment.
@@ -220,7 +228,7 @@ def main(
         app = App()
         app.configure(integration_type, scanning_subscription,
                       monitored_subscriptions, regions, use_nat_gateway)
-        app.run()
+        app.run(output_path)
     except typer.Exit:
         raise
     except Exception as e:

@@ -51,6 +51,10 @@ class AuthCheck(ABC):
     def success(self) -> bool:
         return all(check.is_granted for check in self.checked_permissions)
 
+    @property
+    def missing_permissions(self) -> list[RequiredPermissionCheck]:
+        return [check for check in self.checked_permissions if not check.is_granted]
+
 
 class MonitoredSubscriptionAuthCheck(AuthCheck):
     """Defines the permissions required on a monitored subscription"""
@@ -64,6 +68,12 @@ class MonitoredSubscriptionAuthCheck(AuthCheck):
             "Microsoft.Authorization/roleDefinitions/write",
             "Microsoft.Authorization/roleDefinitions/delete",
             "Microsoft.Authorization/roleDefinitions/read",
+            "Microsoft.Storage/storageAccounts/blobServices/read",
+            "Microsoft.Storage/storageAccounts/blobServices/write",
+            "Microsoft.Storage/storageAccounts/blobServices/delete",
+            "Microsoft.Storage/storageAccounts/blobServices/containers/read",
+            "Microsoft.Storage/storageAccounts/blobServices/containers/write",
+            "Microsoft.Storage/storageAccounts/blobServices/containers/delete",
         ]
 
 
