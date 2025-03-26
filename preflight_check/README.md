@@ -92,7 +92,7 @@ In the following steps, `<scanning-subscription-id>` is the ID of the Azure subs
          "Microsoft.KeyVault/locations/deletedVaults/purge/*",
          "Microsoft.KeyVault/locations/operationResults/*",
          "Microsoft.ManagedIdentity/userAssignedIdentities/*",
-         "Microsoft.Network/natGateways/*"
+         "Microsoft.Network/natGateways/*",
          "Microsoft.Network/networkSecurityGroups/*",
          "Microsoft.Network/publicIPAddresses/*",
          "Microsoft.Network/virtualNetworks/*",
@@ -102,7 +102,7 @@ In the following steps, `<scanning-subscription-id>` is the ID of the Azure subs
          "Microsoft.Storage/storageAccounts/*",
          "Microsoft.Storage/storageAccounts/blobServices/*",
          "Microsoft.Storage/storageAccounts/fileServices/*",
-         "Microsoft.Storage/storageAccounts/listKeys/*",
+         "Microsoft.Storage/storageAccounts/listKeys/*"
       ],
       "NotActions": [],
       "AssignableScopes": [
@@ -121,20 +121,20 @@ In the following steps, `<scanning-subscription-id>` is the ID of the Azure subs
    az ad sp create-for-rbac --name "awls-deployment-sp" --role "AWLS Deployment" --scopes /subscriptions/<scanning-subscription-id>
    ```
 
-4. Grant the required `Microsoft.Graph/Application.ReadWrite.OwnedBy` permission to the service principal - please note that this requires admin consent (so the user running these commands needs to have _Global Administrator_ or _Privileged Role Administrator_ rights in the Azure AD tenant). For context, this permission enables the service principal to create, update, and delete applications it creates.
+4. Grant the required `Microsoft.Graph/Application.ReadWrite.OwnedBy` permission to the service principal - please note that this requires admin consent (so the user running these commands needs to have _Global Administrator_ or _Privileged Role Administrator_ rights in the Azure AD tenant). For context, this permission enables the service principal to create applications as well as update and delete applications it creates.
    ```bash
-   # Get the service principal object ID
-   SP_OBJECT_ID=$(az ad sp list --display-name "awls-deployment-sp" --query '[0].id' -o tsv)
+   # Get the service principal application object ID
+   SP_APP_OBJECT_ID=$(az ad app list --display-name awls-deployment-sp --query '[0].id' -o tsv)
 
    # Add the API permission
    # 00000003-0000-0000-c000-000000000000 is Microsoft Graph's application ID
-   # 06b708a9-e830-4db3-a914-8e69da51d44f is the Application.ReadWrite.OwnedBy permission ID
-   az ad app permission add --id $SP_OBJECT_ID \
+   # 18a4783c-866b-4cc7-a460-3d5e5662c884 is the Application.ReadWrite.OwnedBy permission ID
+   az ad app permission add --id $SP_APP_OBJECT_ID \
       --api 00000003-0000-0000-c000-000000000000 \
-      --api-permissions 06b708a9-e830-4db3-a914-8e69da51d44f=Role
+      --api-permissions 18a4783c-866b-4cc7-a460-3d5e5662c884=Role
 
    # Grant admin consent for the permission
-   az ad app permission admin-consent --id $SP_OBJECT_ID
+   az ad app permission admin-consent --id $SP_APP_OBJECT_ID
    ```
 
 At this point, the service principal should have the necessary permissions to deploy AWLS at the subscription level. Please additionally follow the steps below if you're deploying AWLS at the tenant level.
