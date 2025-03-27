@@ -25,21 +25,37 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = [
-    "mypy>=1.15.0",
-    "ruff>=0.11.1",
-]
+dev = ["mypy==1.10", "ruff>=0.11.1"]
 
 [tool.mypy]
 python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = false  # You can make this stricter over time
-disallow_incomplete_defs = false  # You can make this stricter over time
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+incremental = true
+follow_imports = "silent"
 
 [tool.ruff]
 target-version = "py312"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "B", "I", "N", "UP", "ANN", "C4", "RET", "SIM", "ARG"]
+# ref: https://docs.astral.sh/ruff/rules
+select = [
+    "E", # pycodestyle:error
+    "F", # pyflakes
+    "B", # flake8-bugbear: finding likely bugs
+    "I", # isort: check import order
+    "N", # pep8-naming: Check PEP-8 naming conventions
+    "UP", # pyupgrade: automatically upgrade syntax for newer versions
+    "ANN", # flake8-annotations: type Annotation Checks
+    "C4", # flake8-comprehensions: write better list/set/dict comprehensions
+    "RET", # flake8-return: checks return values
+    "SIM", # flake8-simplify: checks for code that can be simplified
+    "ARG", # flake8-unused-arguments: warn on unused function arguments
+    "T20", # flake8-print: check for print statements
+    "PERF", # perflint: performance anti-patterns
+    "PT", # flake8-pytest-style: check for common style issues or inconsistencies with pytest-based tests
+]
+fixable = ["ALL"]

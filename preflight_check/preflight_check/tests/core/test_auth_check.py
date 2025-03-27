@@ -53,7 +53,7 @@ class TestRequiredPermissionCheck:
     ]
 
     @pytest.mark.parametrize(
-        "required_permission,expected,satisfying_role_id",
+        ("required_permission", "expected", "satisfying_role_id"),
         [
             ("Microsoft.Compute/virtualMachines/read", True, "allow_all_reads"),
             ("Microsoft.Compute/virtualMachines/write", True, "compute_write_only"),

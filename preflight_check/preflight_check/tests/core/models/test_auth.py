@@ -95,11 +95,11 @@ class TestRolePermission:
     ]
 
     @pytest.mark.parametrize(
-        "role_permissions,action_string,expected",
+        ("role_permissions", "action_string", "expected"),
         [
             (test_case["permissions"], action_string, expected)
             for test_case in test_cases
-            for (action_string, expected) in test_case["cases"]
+            for (action_string, expected) in test_case["cases"]  # type: ignore
         ],
     )
     def test_grants_action(

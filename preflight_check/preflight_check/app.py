@@ -30,42 +30,37 @@ class App:
 
     def configure(
         self,
-        integration_type: models.IntegrationType | None,
         scanning_subscription_input: str | None,
         monitored_subscriptions_input: str | None,
+        excluded_subscriptions_input: str | None,
         region_names: str | None,
         use_nat_gateway: bool | None,
     ) -> None:
         """Configure deployment based on provided args or interactive prompts"""
         args = [
-            integration_type,
             scanning_subscription_input,
             monitored_subscriptions_input,
+            excluded_subscriptions_input,
             region_names,
             use_nat_gateway,
         ]
         # If no arguments provided, prompt for deployment config interactively
         if all(arg is None for arg in args):
             self._prompt_deployment_config()
-        # If some but not all arguments provided, error out
-        elif not all(arg is not None for arg in args):
-            self._print_cli_args_error()
-            raise typer.Exit(1)
         # Otherwise, create the deployment config using provided args
         else:
             try:
                 assert isinstance(scanning_subscription_input, str)
                 assert isinstance(monitored_subscriptions_input, str)
+                assert isinstance(excluded_subscriptions_input, str)
                 assert isinstance(region_names, str)
                 assert isinstance(use_nat_gateway, bool)
-                assert isinstance(integration_type, models.IntegrationType)
                 scanning_subscription = self._subscriptions.get_subscription(
                     scanning_subscription_input.strip()
                 )
-                monitored_subscriptions = [
-                    self._subscriptions.get_subscription(sub_id.strip())
-                    for sub_id in monitored_subscriptions_input.strip().split(",")
-                ]
+                (monitored_subscriptions, integration_type) = self._get_monitored_subscriptions(
+                    monitored_subscriptions_input, excluded_subscriptions_input
+                )
                 for sub in monitored_subscriptions:
                     cli.console.print(
                         f"[dim]Enumerating VMs in {sub.name}...[/dim]")
@@ -143,6 +138,28 @@ class App:
             use_nat_gateway=use_nat_gateway,
         )
 
+    def _get_monitored_subscriptions(
+        self,
+        monitored_subscriptions_input: str | None,
+        excluded_subscriptions_input: str | None,
+    ) -> tuple[list[models.Subscription], models.IntegrationType]:
+        if monitored_subscriptions_input and excluded_subscriptions_input:
+            raise typer.BadParameter(
+                "--monitored-subscriptions and --excluded-subscriptions are mutually exclusive"
+            )
+        if monitored_subscriptions_input:
+            return [
+                self._subscriptions.get_subscription(sub_id.strip())
+                for sub_id in monitored_subscriptions_input.strip().split(",")
+            ], models.IntegrationType.SUBSCRIPTION
+        if excluded_subscriptions_input:
+            return [
+                sub
+                for sub in self.available_subscriptions
+                if sub.id not in excluded_subscriptions_input.strip().split(",")
+            ], models.IntegrationType.TENANT
+        return self.available_subscriptions, models.IntegrationType.SUBSCRIPTION
+
     def _get_usage_quota_limits(self) -> dict[str, dict[str, models.UsageQuotaLimit]]:
         cli.console.print("Getting usage quota limits...")
         if not self.deployment_config:
@@ -182,10 +199,6 @@ class App:
 
 @app.command()
 def main(
-    integration_type: Annotated[
-        models.IntegrationType | None,
-        typer.Option("--integration-type", "-i", help="Integration type: tenant or subscription"),
-    ] = None,
     scanning_subscription: Annotated[
         str | None,
         typer.Option(
@@ -199,7 +212,15 @@ def main(
         typer.Option(
             "--monitored-subscriptions",
             "-m",
-            help="Subscription IDs of the subscriptions to monitor with AWLS",
+            help="Subscription IDs (comma-separated) of the subscriptions to be monitored by AWLS; mutually exclusive with --excluded-subscriptions",
+        ),
+    ] = None,
+    excluded_subscriptions: Annotated[
+        str | None,
+        typer.Option(
+            "--excluded-subscriptions",
+            "-e",
+            help="Subscription IDs (comma-separated) of the subscriptions to exclude from AWLS monitoring; mutually exclusive with --monitored-subscriptions",
         ),
     ] = None,
     regions: Annotated[
@@ -226,8 +247,13 @@ def main(
     """
     try:
         app = App()
-        app.configure(integration_type, scanning_subscription,
-                      monitored_subscriptions, regions, use_nat_gateway)
+        app.configure(
+            scanning_subscription,
+            monitored_subscriptions,
+            excluded_subscriptions,
+            regions,
+            use_nat_gateway,
+        )
         app.run(output_path)
     except typer.Exit:
         raise

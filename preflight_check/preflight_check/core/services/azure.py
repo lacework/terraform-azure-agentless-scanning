@@ -18,7 +18,7 @@ class AzureClientFactory:
     _compute_clients: dict[str, ComputeManagementClient] = {}
     _auth_clients: dict[str, AuthorizationManagementClient] = {}
 
-    def __init__(self, credential: DefaultAzureCredential):
+    def __init__(self, credential: DefaultAzureCredential) -> None:
         self.credential = credential
         self._subscription_client = SubscriptionClient(credential)
         self._graph_client = GraphServiceClient(credential)
