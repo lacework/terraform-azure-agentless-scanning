@@ -98,7 +98,7 @@ class App:
         preflight_check = PreflightCheck(
             self.deployment_config, usage_quota_limits, permissions)
         cli.print_preflight_check(preflight_check)
-        cli.output_preflight_check_results_file(preflight_check, path=output_path)
+        cli.output_preflight_check_results_file(preflight_check, output_path)
 
     def _prompt_deployment_config(self) -> None:
         available_subscriptions = self._subscriptions.get_subscriptions()
