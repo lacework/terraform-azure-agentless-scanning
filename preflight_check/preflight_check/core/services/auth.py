@@ -1,4 +1,6 @@
 import asyncio
+import json
+import subprocess
 
 from azure.mgmt.authorization.v2022_04_01.models import RoleAssignment, RoleDefinition
 from msgraph import GraphServiceClient
@@ -163,21 +165,34 @@ class AuthService:
         """
         Get the principal ID of the authenticated principal.
         """
-        graph_client = self._graph_client()
-        try:
-            principal, org_response = await asyncio.gather(
-                graph_client.me.get(), graph_client.organization.get()
-            )
-            if not principal:
-                raise RuntimeError("No principal found")
-            if not org_response or not org_response.value:
-                raise RuntimeError("No organization found")
-            tenant = org_response.value[0]
-            if not principal.id or not tenant.id:
-                raise RuntimeError("No principal or tenant ID found")
-            return principal.id, tenant.id
-        except Exception as e:
-            raise RuntimeError(f"Failed to get principal or tenant ID: {str(e)}") from e
+        account_show_response = subprocess.run(
+            ["az", "account", "show"], capture_output=True, text=True, check=True
+        )
+        account = json.loads(account_show_response.stdout)
+        # get the tenant ID from the account show response
+        tenant_id = account.get("tenantId")
+        if not tenant_id:
+            raise RuntimeError("No tenant ID found for user")
+        # get the principal ID
+        principal = account.get("user", {})
+        # determine if the authenticated principal is a user or service principal
+        principal_id: str = ""
+        is_service_principal = principal.get("type") == "servicePrincipal"
+        # for service principals, the principal ID is in the account show response
+        if is_service_principal:
+            principal_id = principal.get("name")
+            if not principal_id:
+                raise RuntimeError(
+                    "No principal ID found for service principal; response:",
+                    f"\n{account_show_response.stdout}",
+                )
+        # for users, get the principal ID from the graph client
+        else:
+            principal = await self._graph_client().me.get()
+            principal_id = principal.id
+            if not principal_id:
+                raise RuntimeError("No principal ID found for user")
+        return principal_id, tenant_id
 
     def _auth_client(self, subscription_id: str) -> AuthorizationManagementClient:
         return self._azure_client_factory.get_auth_client(subscription_id)
