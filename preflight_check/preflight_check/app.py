@@ -224,7 +224,7 @@ def main(
         typer.Option(
             "--regions",
             "-r",
-            help="Azure regions (comma-separated) where scanner will be deployed",
+            help="Regions (comma-separated) where AWLS will be deployed - if not provided, all regions will be monitored",
             rich_help_panel="Deployment Configuration",
         ),
     ] = None,
@@ -246,12 +246,22 @@ def main(
             rich_help_panel="Output",
         ),
     ] = "./preflight_report.json",
+    no_emoji: Annotated[
+        bool,
+        typer.Option(
+            "--no-emoji",
+            "-e",
+            help="Disable emojis in the preflight check output",
+            rich_help_panel="Output",
+        ),
+    ] = False,
 ) -> None:
     """
     Preflight check for Azure Agentless Scanner deployment.
     """
     try:
         credential = DefaultAzureCredential()
+        cli.console = cli.Console(emoji=not no_emoji)
         app = App(credential, output_path)
         app.configure(
             scanning_subscription,
