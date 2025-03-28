@@ -54,6 +54,11 @@ class UsageQuotaCheck(ABC):
             return False
         return self.configured_limit >= (self.required_quota + self.current_usage)
 
+    @property
+    def required_scanning_instances(self) -> int:
+        """Required number of scanning instances"""
+        return ceil(self.region.vm_count / self.batch_size)
+
     def _get_quota_limit(self, quota_name: str) -> UsageQuotaLimit:
         return self._quota_limits[quota_name]
 
@@ -64,8 +69,7 @@ class VCPUQuotaCheckBase(UsageQuotaCheck, ABC):
 
     @property
     def required_quota(self) -> int:
-        vcpu_per_vm = 2 / self.batch_size
-        return ceil(self.region.vm_count * vcpu_per_vm)
+        return self.required_scanning_instances * 2
 
 
 @dataclass
@@ -78,7 +82,7 @@ class PublicIPQuotaCheckBase(UsageQuotaCheck, ABC):
     def required_quota(self) -> int:
         if self.use_nat_gateway:
             return 1
-        return ceil(self.region.vm_count / self.batch_size)
+        return self.required_scanning_instances
 
 
 @dataclass
