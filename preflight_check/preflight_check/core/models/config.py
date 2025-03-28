@@ -28,6 +28,9 @@ class Subscription:
         """Total VMs across all regions"""
         return sum(region.vm_count for region in self.regions.values())
 
+    def __str__(self) -> str:
+        return f"{self.name} ({self.id})"
+
 
 @dataclass
 class DeploymentConfig:

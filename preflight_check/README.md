@@ -32,38 +32,61 @@ You will be prompted for the following information about how you intend to deplo
 ### Non-Interactive Mode
 
 ```bash
+uv run -m preflight_check --help
+                                                                                                                                      
+ Usage: python -m preflight_check [OPTIONS]                                                                                           
+                                                                                                                                      
+ Preflight check for Azure Agentless Scanner deployment.                                                                              
+                                                                                                                                      
+╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                                                                        │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Deployment Configuration ─────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --scanning-subscription    -s                        TEXT  Subscription ID where scanner resources will be deployed                │
+│                                                            [default: None]                                                         │
+│ --monitored-subscriptions  -m                        TEXT  Subscription IDs (comma-separated) of the subscriptions to be monitored │
+│                                                            by AWLS; mutually exclusive with --excluded-subscriptions               │
+│                                                            [default: None]                                                         │
+│ --excluded-subscriptions   -e                        TEXT  Subscription IDs (comma-separated) of the subscriptions to exclude from │
+│                                                            AWLS monitoring; mutually exclusive with --monitored-subscriptions      │
+│                                                            [default: None]                                                         │
+│ --regions                  -r                        TEXT  Azure regions (comma-separated) where scanner will be deployed          │
+│                                                            [default: None]                                                         │
+│ --nat-gateway              -n  --no-nat-gateway  -N        Use NAT Gateway for optimized networking (recommended for 1000+ VMs)    │
+│                                                            [default: no-nat-gateway]                                               │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Output ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --output-path  -o      TEXT  Path to output the preflight check results [default: ./preflight_report.json]                         │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+```bash
 uv run preflight_check.py \
-  --integration-type "tenant" \
   --scanning-subscription "scanning-subscription-id" \
   --monitored-subscriptions "monitored-subscription-id-1,monitored-subscription-id-2" \
   --regions "eastus,eastus2,westus,westus2" \
+  --no-nat-gateway \
+  --output-path "./preflight_report.json"
 ```
-
-## Output
-
-The script provides:
-- Real-time CLI feedback with validation results
-- Detailed error messages and remediation steps
-- JSON report file (`preflight_report.json`)
 
 ### Sample Output
 
 ```
-🔍 Azure Preflight Check for Deployment
---------------------------------------
-Integration Type: Tenant-Level
-Scanning Subscription: ********-****-****-****-************
-Deployment Regions: eastus, westus
-VMs to be Scanned: 100
-Using NAT Gateway: Yes
+Preflight Check Summary
+-----------------------
+Scanning Subscription: LaceworkAWLS (********-****-****-****-************)
+Monitored Subscriptions:
+  - MonitoredSubscription1 (********-****-****-****-************)
+  - MonitoredSubscription2 (********-****-****-****-************)
+  - MonitoredSubscription3 (********-****-****-****-************)
+Regions: eastus, eastus2, westus, westus2
+Use NAT Gateway: False
 
-Checking Resource Quotas...
-✅ vCPU quota sufficient in eastus (50 required, 100 available)
-✅ vCPU quota sufficient in westus (50 required, 100 available)
-✅ NAT Gateway deployment selected - no public IP quota check required
 
-📊 Summary: All checks passed! Ready for deployment.
-💾 Detailed report saved to preflight_report.json
+✅ All usage quota limits are sufficient!
+✅ All permission checks passed!
+
+💾 Detailed results written to preflight_report.json
 ```
 
 ## Authentication & Authorization

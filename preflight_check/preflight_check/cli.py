@@ -7,7 +7,7 @@ from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
 from .core import AuthCheck, AuthChecks, PreflightCheck, QuotaChecks
-from .core.models import IntegrationType, Subscription
+from .core.models import DeploymentConfig, IntegrationType, Subscription
 
 console = Console()
 
@@ -226,7 +226,7 @@ def print_quota_checks(quota_checks: QuotaChecks) -> None:
             vm_count = str(check.region.vm_count) if i == 0 else ""
 
             # Determine status symbol and style
-            status = "✅" if check.success else "❌"
+            status = ":white_check_mark:" if check.success else "❌"
 
             # Add row to table
             table.add_row(
@@ -246,9 +246,13 @@ def print_quota_checks(quota_checks: QuotaChecks) -> None:
 
     # Print summary and help message
     if quota_checks.all_checks_pass():
-        console.print("\n[green]✅ All configured usage quota limits are sufficient![/green]")
+        console.print(
+            "\n[green]:white_check_mark: All configured usage quota limits are sufficient![/green]"
+        )
     else:
-        console.print("\n[yellow]⚠️ Some configured usage quota limits are not sufficient.[/yellow]")
+        console.print(
+            "\n[yellow]:x: Some configured usage quota limits are not sufficient.[/yellow]"
+        )
         console.print(
             "Please request quota increases at: https://portal.azure.com/#blade/Microsoft_Azure_Capacity/QuotaRequestBlade"
         )
@@ -297,36 +301,49 @@ def print_preflight_check(preflight_check: PreflightCheck) -> None:
     print_quota_checks(preflight_check.usage_quota_checks)
     print_auth_checks(preflight_check.auth_checks)
     # summarize results
-    console.print("\n[bold]Preflight Check Summary[/bold]")
+    console.print("\n\n[bold]Preflight Check Summary[/bold]")
+    console.print("-----------------------")
+    print_deployment_config(preflight_check.deployment_config)
+    console.print("\n")
     if preflight_check.usage_quota_checks.all_checks_pass():
-        console.print("[green bold]✅ All usage quota limits are sufficient![/green bold]")
+        console.print(
+            "[green bold]:white_check_mark: All usage quota limits are sufficient![/green bold]"
+        )
     else:
-        console.print("\n[yellow bold]Some usage quota limits are not sufficient.[/yellow bold]")
+        console.print("[red bold]:x: Some usage quota limits are not sufficient.[/red bold]")
         for region_name, quota_checks in preflight_check.usage_quota_checks.quota_checks.items():
-            console.print(f"\t[yellow]{region_name}[/yellow]")
+            console.print(f"  - {region_name}")
             for quota_check in quota_checks:
                 if not quota_check.success:
                     console.print(
-                        f"\t\t[yellow]- {quota_check.display_name} (Configured: {quota_check.configured_limit}, Current: {quota_check.current_usage}, Required: {quota_check.required_quota})[/yellow]"
+                        f"    - {quota_check.display_name} (Configured: {quota_check.configured_limit}, Current: {quota_check.current_usage}, Required: {quota_check.required_quota})"
                     )
     # print auth checks summary
     if preflight_check.auth_checks.all_checks_pass():
-        console.print("[green bold]✅ All permission checks passed![/green bold]")
+        console.print("[green bold]:white_check_mark: All permission checks passed![/green bold]")
     else:
-        console.print("\n[yellow bold]Some permission checks did not pass.[/yellow bold]")
+        console.print("[red bold]:x: Some permission checks did not pass.[/red bold]")
         console.print(
-            "[yellow]The authenticated principal is missing the following permissions on the following subscriptions:[/yellow]"
+            "[dim]The authenticated principal is missing the following permissions on the following subscriptions:[/dim]"
         )
         for auth_check in [
             preflight_check.auth_checks.scanning_subscription,
             *preflight_check.auth_checks.monitored_subscriptions,
         ]:
             if not auth_check.success:
-                console.print(f"\t[bold]{auth_check.subscription.name}[/bold]:")
+                console.print(f"  - {auth_check.subscription.name}:")
                 for missing_permission in auth_check.missing_permissions:
-                    console.print(
-                        f"\t\t[yellow]- {missing_permission.required_permission}[/yellow]"
-                    )
+                    console.print(f"    - {missing_permission.required_permission}")
+
+
+def print_deployment_config(deployment_config: DeploymentConfig) -> None:
+    """Print the deployment config"""
+    console.print(f"[bold]Scanning Subscription:[/bold] {deployment_config.scanning_subscription}")
+    console.print("[bold]Monitored Subscriptions:[/bold]")
+    for sub in deployment_config.monitored_subscriptions:
+        console.print(f"  - {sub}")
+    console.print(f"[bold]Regions:[/bold] {', '.join(deployment_config.regions)}")
+    console.print(f"[bold]Use NAT Gateway:[/bold] {deployment_config.use_nat_gateway}")
 
 
 def output_preflight_check_results_file(
@@ -401,4 +418,4 @@ def output_preflight_check_results_file(
     with open(path, "w") as f:
         json.dump(results, f, indent=2)
 
-    console.print(f"\nPreflight check results written to [bold]{path}[/bold]\n")
+    console.print(f"\n:floppy_disk: [bold]Detailed results written to {path}[/bold]\n")

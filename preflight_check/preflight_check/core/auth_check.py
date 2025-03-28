@@ -68,12 +68,13 @@ class MonitoredSubscriptionAuthCheck(AuthCheck):
             "Microsoft.Authorization/roleDefinitions/write",
             "Microsoft.Authorization/roleDefinitions/delete",
             "Microsoft.Authorization/roleDefinitions/read",
-            "Microsoft.Storage/storageAccounts/blobServices/read",
-            "Microsoft.Storage/storageAccounts/blobServices/write",
-            "Microsoft.Storage/storageAccounts/blobServices/delete",
-            "Microsoft.Storage/storageAccounts/blobServices/containers/read",
-            "Microsoft.Storage/storageAccounts/blobServices/containers/write",
-            "Microsoft.Storage/storageAccounts/blobServices/containers/delete",
+            # TODO: Remove - the below permissions are just for testing purposes.
+            # "Microsoft.Storage/storageAccounts/blobServices/read",
+            # "Microsoft.Storage/storageAccounts/blobServices/write",
+            # "Microsoft.Storage/storageAccounts/blobServices/delete",
+            # "Microsoft.Storage/storageAccounts/blobServices/containers/read",
+            # "Microsoft.Storage/storageAccounts/blobServices/containers/write",
+            # "Microsoft.Storage/storageAccounts/blobServices/containers/delete",
         ]
 
 

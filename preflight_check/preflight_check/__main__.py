@@ -1,4 +1,6 @@
-from preflight_check.app import app
+import typer
+
+from preflight_check.app import main
 
 if __name__ == "__main__":
-    app()
+    typer.run(main)

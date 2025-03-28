@@ -6,8 +6,6 @@ from azure.identity import DefaultAzureCredential
 from preflight_check import cli
 from preflight_check.core import PreflightCheck, models, services
 
-app = typer.Typer()
-
 
 class App:
     """Orchestrates the preflight check process"""
@@ -19,8 +17,8 @@ class App:
     available_subscriptions: list[models.Subscription]
     deployment_config: models.DeploymentConfig | None = None
 
-    def __init__(self) -> None:
-        credential = DefaultAzureCredential()
+    def __init__(self, credential: DefaultAzureCredential, output_path: str) -> None:
+        self.output_path = output_path
         azure_client_factory = services.AzureClientFactory(credential)
         self._subscriptions = services.SubscriptionService(azure_client_factory)
         self._quotas = services.QuotaService(azure_client_factory)
@@ -33,15 +31,15 @@ class App:
         scanning_subscription_input: str | None,
         monitored_subscriptions_input: str | None,
         excluded_subscriptions_input: str | None,
-        region_names: str | None,
-        use_nat_gateway: bool | None,
+        regions_input: str | None,
+        use_nat_gateway: bool,
     ) -> None:
         """Configure deployment based on provided args or interactive prompts"""
         args = [
             scanning_subscription_input,
             monitored_subscriptions_input,
             excluded_subscriptions_input,
-            region_names,
+            regions_input,
             use_nat_gateway,
         ]
         # If no arguments provided, prompt for deployment config interactively
@@ -49,58 +47,38 @@ class App:
             self._prompt_deployment_config()
         # Otherwise, create the deployment config using provided args
         else:
-            try:
-                assert isinstance(scanning_subscription_input, str)
-                assert isinstance(monitored_subscriptions_input, str)
-                assert isinstance(excluded_subscriptions_input, str)
-                assert isinstance(region_names, str)
-                assert isinstance(use_nat_gateway, bool)
-                scanning_subscription = self._subscriptions.get_subscription(
-                    scanning_subscription_input.strip()
-                )
-                (monitored_subscriptions, integration_type) = self._get_monitored_subscriptions(
-                    monitored_subscriptions_input, excluded_subscriptions_input
-                )
-                for sub in monitored_subscriptions:
-                    cli.console.print(
-                        f"[dim]Enumerating VMs in {sub.name}...[/dim]")
-                    self._subscriptions.get_subscription_vms(sub)
-                valid_region_names = {
-                    region_name for sub in monitored_subscriptions for region_name in sub.regions
-                }
-                selected_region_names = [
-                    region_name.strip()
-                    for region_name in region_names.strip().split(",")
-                    if region_name.strip() in valid_region_names
-                ]
-            except ValueError as e:
-                cli.console.print(f"[red]Error: {e}[/red]")
-                raise typer.Exit(1) from e
+            scanning_subscription = self._get_scanning_subscription(scanning_subscription_input)
+            monitored_subscriptions, integration_type = self._get_monitored_subscriptions(
+                monitored_subscriptions_input, excluded_subscriptions_input
+            )
+            for sub in monitored_subscriptions:
+                cli.console.print(f"[dim]Enumerating VMs in {sub.name}...[/dim]")
+                self._subscriptions.get_subscription_vms(sub)
+            selected_regions = self._get_regions(monitored_subscriptions, regions_input)
             self.deployment_config = models.DeploymentConfig(
                 integration_type=integration_type,
                 scanning_subscription=scanning_subscription,
                 monitored_subscriptions=monitored_subscriptions,
-                regions=selected_region_names,
+                regions=selected_regions,
                 use_nat_gateway=use_nat_gateway,
             )
 
-    def run(self, output_path: str) -> None:
+    def run(self) -> None:
         """Run the preflight check"""
         if not self.deployment_config:
             raise RuntimeError("Deployment config not set")
         usage_quota_limits = self._get_usage_quota_limits()
         permissions = self._get_permissions()
-        preflight_check = PreflightCheck(
-            self.deployment_config, usage_quota_limits, permissions)
+        preflight_check = PreflightCheck(self.deployment_config, usage_quota_limits, permissions)
         cli.print_preflight_check(preflight_check)
-        cli.output_preflight_check_results_file(preflight_check, output_path)
+        cli.output_preflight_check_results_file(preflight_check, self.output_path)
 
     def _prompt_deployment_config(self) -> None:
         available_subscriptions = self._subscriptions.get_subscriptions()
-        scanning_subscription = cli.prompt_scanning_subscription(
-            available_subscriptions)
+        scanning_subscription = cli.prompt_scanning_subscription(available_subscriptions)
         (monitored_subscriptions, integration_type) = cli.prompt_monitored_subscriptions(
-            available_subscriptions)
+            available_subscriptions
+        )
 
         # Enumerate VMs in all monitored subscriptions
         for sub in monitored_subscriptions:
@@ -124,7 +102,8 @@ class App:
         # Show filtered VM counts
         cli.console.print("\n[bold]Filtered VM Counts[/bold]")
         cli.console.print(
-            f"[dim]The following is the updated VM count based on the user-selected regions:[/dim]\n{', '.join(selected_region_names)}")
+            f"[dim]The following is the updated VM count based on the user-selected regions:[/dim]\n{', '.join(selected_region_names)}"
+        )
         cli.print_vm_counts(monitored_subscriptions)
 
         # Get NAT Gateway preference
@@ -137,6 +116,18 @@ class App:
             regions=selected_region_names,
             use_nat_gateway=use_nat_gateway,
         )
+
+    def _get_scanning_subscription(
+        self, scanning_subscription_input: str | None
+    ) -> models.Subscription:
+        if scanning_subscription_input is not None:
+            try:
+                return self._subscriptions.get_subscription(scanning_subscription_input.strip())
+            except ValueError as e:
+                raise typer.BadParameter(
+                    "--scanning-subscription must be a valid subscription ID"
+                ) from e
+        raise typer.BadParameter("--scanning-subscription is required")
 
     def _get_monitored_subscriptions(
         self,
@@ -185,19 +176,21 @@ class App:
         )
         return self._auth.get_all_assigned_roles(subscriptions, include_root_management_group)
 
-    def _print_cli_args_error(self) -> None:
-        cli.console.print(
-            "[red]Error: When running in non-interactive mode, all arguments must be provided.[/red]")
-        cli.console.print("Required arguments:")
-        cli.console.print("  --integration-type [tenant|subscription]")
-        cli.console.print("  --scanning-subscription SUBSCRIPTION_ID")
-        cli.console.print(
-            "  --monitored-subscriptions SUBSCRIPTION_ID1,SUBSCRIPTION_ID2,...")
-        cli.console.print("  --regions REGION1,REGION2,...")
-        cli.console.print("  --nat-gateway [true|false]")
+    def _get_regions(
+        self, monitored_subscriptions: list[models.Subscription], regions_input: str | None
+    ) -> list[str]:
+        valid_regions = {
+            region_name for sub in monitored_subscriptions for region_name in sub.regions
+        }
+        if not regions_input:
+            return list(valid_regions)
+        return [
+            region_name.strip()
+            for region_name in regions_input.strip().split(",")
+            if region_name.strip() in valid_regions
+        ]
 
 
-@app.command()
 def main(
     scanning_subscription: Annotated[
         str | None,
@@ -205,6 +198,7 @@ def main(
             "--scanning-subscription",
             "-s",
             help="Subscription ID where scanner resources will be deployed",
+            rich_help_panel="Deployment Configuration",
         ),
     ] = None,
     monitored_subscriptions: Annotated[
@@ -213,6 +207,7 @@ def main(
             "--monitored-subscriptions",
             "-m",
             help="Subscription IDs (comma-separated) of the subscriptions to be monitored by AWLS; mutually exclusive with --excluded-subscriptions",
+            rich_help_panel="Deployment Configuration",
         ),
     ] = None,
     excluded_subscriptions: Annotated[
@@ -221,32 +216,43 @@ def main(
             "--excluded-subscriptions",
             "-e",
             help="Subscription IDs (comma-separated) of the subscriptions to exclude from AWLS monitoring; mutually exclusive with --monitored-subscriptions",
+            rich_help_panel="Deployment Configuration",
         ),
     ] = None,
     regions: Annotated[
         str | None,
         typer.Option(
-            "--regions", "-r", help="Azure regions (comma-separated) where scanner will be deployed"
+            "--regions",
+            "-r",
+            help="Azure regions (comma-separated) where scanner will be deployed",
+            rich_help_panel="Deployment Configuration",
         ),
     ] = None,
     use_nat_gateway: Annotated[
-        bool | None,
+        bool,
         typer.Option(
             "--nat-gateway/--no-nat-gateway",
             "-n/-N",
             help="Use NAT Gateway for optimized networking (recommended for 1000+ VMs)",
+            rich_help_panel="Deployment Configuration",
         ),
-    ] = None,
+    ] = False,
     output_path: Annotated[
         str,
-        typer.Option("--output-path", "-o", help="Path to output the preflight check results"),
+        typer.Option(
+            "--output-path",
+            "-o",
+            help="Path to output the preflight check results",
+            rich_help_panel="Output",
+        ),
     ] = "./preflight_report.json",
 ) -> None:
     """
     Preflight check for Azure Agentless Scanner deployment.
     """
     try:
-        app = App()
+        credential = DefaultAzureCredential()
+        app = App(credential, output_path)
         app.configure(
             scanning_subscription,
             monitored_subscriptions,
@@ -254,7 +260,7 @@ def main(
             regions,
             use_nat_gateway,
         )
-        app.run(output_path)
+        app.run()
     except typer.Exit:
         raise
     except Exception as e:
