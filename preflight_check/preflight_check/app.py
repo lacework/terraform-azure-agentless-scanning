@@ -3,7 +3,7 @@ from typing import Annotated
 import typer
 from azure.identity import DefaultAzureCredential
 
-from preflight_check import cli
+from preflight_check import cli, log
 from preflight_check.core import PreflightCheck, models, services
 
 
@@ -251,7 +251,16 @@ def main(
         typer.Option(
             "--no-emoji",
             "-e",
-            help="Disable emojis in the preflight check output",
+            help="Disable emoji rendering in the preflight check output",
+            rich_help_panel="Output",
+        ),
+    ] = False,
+    enable_debug_logging: Annotated[
+        bool,
+        typer.Option(
+            "--debug",
+            "-d",
+            help="Enable debug logging",
             rich_help_panel="Output",
         ),
     ] = False,
@@ -260,6 +269,8 @@ def main(
     Preflight check for Azure Agentless Scanner deployment.
     """
     try:
+        if enable_debug_logging:
+            log.set_level(log.LogLevel.DEBUG)
         credential = DefaultAzureCredential()
         cli.console = cli.Console(emoji=not no_emoji)
         app = App(credential, output_path)
