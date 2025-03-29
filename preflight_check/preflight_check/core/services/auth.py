@@ -5,6 +5,7 @@ import subprocess
 from azure.mgmt.authorization.v2022_04_01.models import RoleAssignment, RoleDefinition
 from msgraph import GraphServiceClient
 
+from preflight_check import log
 from preflight_check.core import models
 
 from .azure import AuthorizationManagementClient, AzureClientFactory
@@ -43,6 +44,7 @@ class AuthService:
         if include_root_management_group:
             root_roles = self._get_assigned_roles_for_root_management_group(subscriptions[0].id)
             assigned_roles[self.get_root_management_group_id()] = root_roles
+        log.debug(f"Assigned roles: {assigned_roles}")
         return assigned_roles
 
     # def get_assigned_roles_for_subscription(
@@ -96,11 +98,14 @@ class AuthService:
         role_assignments = auth_client.role_assignments.list_for_scope(
             scope, filter=f"assignedTo('{self._principal_id}')"
         )
+        log.debug(f"Role assignments: {role_assignments}")
         assigned_roles = []
         for role_assignment in role_assignments:
             role_definition = self._get_role_definition(
                 subscription_id, role_assignment.role_definition_id
             )
+            log.debug(f"Role assignment: {role_assignment}")
+            log.debug(f"Role definition: {role_definition}")
             assigned_roles.append(self._create_role(role_assignment, role_definition))
         return assigned_roles
 
@@ -133,6 +138,9 @@ class AuthService:
         Returns:
             List of permissions
         """
+        if role_definition.id is None:
+            raise ValueError("Role definition has no ID")
+
         if role_definition.id not in self._role_permissions:
             if not role_definition.permissions:
                 raise ValueError("Role definition has no permissions")
@@ -178,20 +186,43 @@ class AuthService:
         # determine if the authenticated principal is a user or service principal
         principal_id: str = ""
         is_service_principal = principal.get("type") == "servicePrincipal"
-        # for service principals, the principal ID is in the account show response
+        # for service principals, need to get the objectId, not just the name (appId)
         if is_service_principal:
-            principal_id = principal.get("name")
-            if not principal_id:
+            app_id = principal.get("name")
+            if not app_id:
                 raise RuntimeError(
-                    "No principal ID found for service principal; response:",
+                    "No app ID found for service principal; response:",
                     f"\n{account_show_response.stdout}",
                 )
+            # Get the actual principalId (objectId) for the service principal
+            log.debug(f"Getting service principal ID for name: {app_id}")
+            sp_show_response = subprocess.run(
+                ["az", "ad", "sp", "show", "--id", app_id],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            # Check if the command succeeded
+            if sp_show_response.returncode == 0:
+                sp_info = json.loads(sp_show_response.stdout)
+                principal_id = sp_info.get("id")
+                log.debug(f"Service principal details: appId={app_id}, objectId={principal_id}")
+                if not principal_id:
+                    raise RuntimeError(
+                        f"No object ID found for service principal {app_id}; response:",
+                        f"\n{sp_show_response.stdout}",
+                    )
+            else:
+                raise RuntimeError(f"Failed to get service principal details for appId: {app_id}")
         # for users, get the principal ID from the graph client
         else:
             principal = await self._graph_client().me.get()
             principal_id = principal.id
             if not principal_id:
                 raise RuntimeError("No principal ID found for user")
+
+        log.debug(f"Using principal ID: {principal_id}")
         return principal_id, tenant_id
 
     def _auth_client(self, subscription_id: str) -> AuthorizationManagementClient:
