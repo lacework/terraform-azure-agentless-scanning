@@ -312,12 +312,13 @@ def print_preflight_check(preflight_check: PreflightCheck) -> None:
     else:
         console.print("[red bold]:x: Some usage quota limits are not sufficient.[/red bold]")
         for region_name, quota_checks in preflight_check.usage_quota_checks.quota_checks.items():
-            console.print(f"  - {region_name}")
-            for quota_check in quota_checks:
-                if not quota_check.success:
-                    console.print(
-                        f"    - {quota_check.display_name} (Configured: {quota_check.configured_limit}, Current: {quota_check.current_usage}, Required: {quota_check.required_quota})"
-                    )
+            if not all(quota_check.success for quota_check in quota_checks):
+                console.print(f"  - {region_name}")
+                for quota_check in quota_checks:
+                    if not quota_check.success:
+                        console.print(
+                            f"    - {quota_check.display_name} (Configured: {quota_check.configured_limit}, Current: {quota_check.current_usage}, Required: {quota_check.required_quota})"
+                        )
     # print auth checks summary
     if preflight_check.auth_checks.all_checks_pass():
         console.print("[green bold]:white_check_mark: All permission checks passed![/green bold]")
