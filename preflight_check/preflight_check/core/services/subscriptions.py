@@ -62,13 +62,20 @@ class SubscriptionService:
                 region = vm.location.lower()
                 vm_counts[region] = vm_counts.get(region, 0) + 1
 
+            # List all VMSS VMs in the subscription
+            for vmss in self._compute_client(subscription.id).virtual_machine_scale_sets.list_all():
+                region = vmss.location.lower()
+                vmss_resource_group_name = _get_resource_group_name_from_vmss_id(vmss.id)
+                for _ in self._compute_client(subscription.id).virtual_machine_scale_set_vms.list(
+                    vmss_resource_group_name, vmss.name
+                ):
+                    vm_counts[region] = vm_counts.get(region, 0) + 1
+
             # Convert to Region objects
             subscription.regions = {
                 region_name: models.Region(name=region_name, vm_count=vm_count)
                 for region_name, vm_count in vm_counts.items()
             }
-
-            # TODO: Add VMSS enumeration
 
             return subscription
 
@@ -83,3 +90,15 @@ class SubscriptionService:
 
     def _subscription_client(self) -> azure.SubscriptionClient:
         return self.azure_client_factory.get_subscription_client()
+
+def _get_resource_group_name_from_vmss_id(vmss_id: str) -> str:
+    """
+    Extract the resource group name from a VMSS ID.
+
+    VMSS ID format: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Compute/virtualMachineScaleSets/{vmScaleSetName}
+    """
+    id_parts = vmss_id.split("/")
+    if len(id_parts) != 9:
+        raise RuntimeError(f"Invalid VMSS ID: {vmss_id}")
+
+    return id_parts[4]
