@@ -1,4 +1,4 @@
-# Azure Agentless Scanner Preflight Check
+# Azure Agentless Workload Scanner Preflight Check
 
 A validation tool to ensure your Azure environment is properly configured for deploying the Lacework Agentless Scanner.
 
@@ -32,32 +32,36 @@ You will be prompted for the following information about how you intend to deplo
 ### Non-Interactive Mode
 
 ```bash
-uv run -m preflight_check --help
-                                                                                                                                      
- Usage: python -m preflight_check [OPTIONS]                                                                                           
-                                                                                                                                      
- Preflight check for Azure Agentless Scanner deployment.                                                                              
-                                                                                                                                      
-╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --help          Show this message and exit.                                                                                        │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Deployment Configuration ─────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --scanning-subscription    -s                        TEXT  Subscription ID where scanner resources will be deployed                │
-│                                                            [default: None]                                                         │
-│ --monitored-subscriptions  -m                        TEXT  Subscription IDs (comma-separated) of the subscriptions to be monitored │
-│                                                            by AWLS; mutually exclusive with --excluded-subscriptions               │
-│                                                            [default: None]                                                         │
-│ --excluded-subscriptions   -e                        TEXT  Subscription IDs (comma-separated) of the subscriptions to exclude from │
-│                                                            AWLS monitoring; mutually exclusive with --monitored-subscriptions      │
-│                                                            [default: None]                                                         │
-│ --regions                  -r                        TEXT  Azure regions (comma-separated) where scanner will be deployed          │
-│                                                            [default: None]                                                         │
-│ --nat-gateway              -n  --no-nat-gateway  -N        Use NAT Gateway for optimized networking (recommended for 1000+ VMs)    │
-│                                                            [default: no-nat-gateway]                                               │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Output ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --output-path  -o      TEXT  Path to output the preflight check results [default: ./preflight_report.json]                         │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ uv run -m preflight_check --help
+
+ Usage: python -m preflight_check [OPTIONS]
+
+ Preflight check for Azure Agentless Workload Scanner deployment.
+
+╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                                                                       │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Deployment Configuration ────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --scanning-subscription    -s                        TEXT  Subscription ID where scanner resources will be deployed               │
+│                                                            [default: None]                                                        │
+│ --monitored-subscriptions  -m                        TEXT  Subscription IDs (comma-separated) of the subscriptions to be          │
+│                                                            monitored by AWLS; mutually exclusive with --excluded-subscriptions    │
+│                                                            [default: None]                                                        │
+│ --excluded-subscriptions   -e                        TEXT  Subscription IDs (comma-separated) of the subscriptions to exclude     │
+│                                                            from AWLS monitoring; mutually exclusive with                          │
+│                                                            --monitored-subscriptions                                              │
+│                                                            [default: None]                                                        │
+│ --regions                  -r                        TEXT  Regions (comma-separated) where AWLS will be deployed - if not         │
+│                                                            provided, all regions will be monitored                                │
+│                                                            [default: None]                                                        │
+│ --nat-gateway              -n  --no-nat-gateway  -N        Use NAT Gateway for optimized networking (recommended for 1000+ VMs)   │
+│                                                            [default: no-nat-gateway]                                              │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Output ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --output-path  -o      TEXT  Path to output the preflight check results [default: ./preflight_report.json]                        │
+│ --no-emoji     -e            Disable emoji rendering in the preflight check output                                                │
+│ --debug        -d            Enable debug logging                                                                                 │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 ```bash
