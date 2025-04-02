@@ -38,7 +38,7 @@ class Logger:
         self.level = level
 
     def _log(self, level: LogLevel, message: str) -> None:
-        if level <= self.level:
+        if self.level <= level:
             self.logger.log(f"[{level}] {message}")
 
 
