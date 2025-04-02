@@ -270,6 +270,15 @@ def main(
     try:
         if enable_debug_logging:
             log.set_level(log.LogLevel.DEBUG)
+        log.debug(
+            f"scanning_subscription: {scanning_subscription}\n"
+            f"monitored_subscriptions: {monitored_subscriptions}\n"
+            f"excluded_subscriptions: {excluded_subscriptions}\n"
+            f"regions: {regions}\n"
+            f"use_nat_gateway: {use_nat_gateway}\n"
+            f"output_path: {output_path}\n"
+            f"no_emoji: {no_emoji}\n"
+        )
         credential = DefaultAzureCredential()
         cli.console = cli.Console(emoji=not no_emoji)
         app = App(credential, output_path)
