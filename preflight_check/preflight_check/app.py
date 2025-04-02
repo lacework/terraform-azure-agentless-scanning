@@ -40,7 +40,6 @@ class App:
             monitored_subscriptions_input,
             excluded_subscriptions_input,
             regions_input,
-            use_nat_gateway,
         ]
         # If no arguments provided, prompt for deployment config interactively
         if all(arg is None for arg in args):
