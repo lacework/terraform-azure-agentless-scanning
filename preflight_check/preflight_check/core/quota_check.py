@@ -29,12 +29,6 @@ class UsageQuotaCheck(ABC):
 
     @property
     @abstractmethod
-    def fix_url(self) -> str:
-        """URL for requesting quota increase"""
-        pass
-
-    @property
-    @abstractmethod
     def required_quota(self) -> int:
         """Required quota for the region"""
         pass
@@ -97,10 +91,6 @@ class TotalVCPUsQuotaCheck(VCPUQuotaCheckBase):
     def display_name(self) -> str:
         return "Total Regional vCPUs"
 
-    @property
-    def fix_url(self) -> str:
-        return "https://portal.azure.com/#blade/Microsoft_Azure_Capacity/QuotaRequestsBlade"
-
 
 @dataclass
 class DSFamilyVCPUQuotaCheck(VCPUQuotaCheckBase):
@@ -113,10 +103,6 @@ class DSFamilyVCPUQuotaCheck(VCPUQuotaCheckBase):
     @property
     def display_name(self) -> str:
         return "Sum of vCPU families (DSv3, DSv4, and DSv5)"
-
-    @property
-    def fix_url(self) -> str:
-        return "https://portal.azure.com/#blade/Microsoft_Azure_Capacity/QuotaRequestsBlade"
 
     @property
     def configured_limit(self) -> int:
@@ -147,10 +133,6 @@ class PublicIPQuotaCheck(PublicIPQuotaCheckBase):
     def display_name(self) -> str:
         return "Total Regional Public IPs"
 
-    @property
-    def fix_url(self) -> str:
-        return "https://portal.azure.com/#blade/Microsoft_Azure_Capacity/QuotaRequestsBlade"
-
 
 @dataclass
 class StandardPublicIPQuotaCheck(PublicIPQuotaCheckBase):
@@ -163,7 +145,3 @@ class StandardPublicIPQuotaCheck(PublicIPQuotaCheckBase):
     @property
     def display_name(self) -> str:
         return "Public IPv4 Addresses - Standard"
-
-    @property
-    def fix_url(self) -> str:
-        return "https://portal.azure.com/#blade/Microsoft_Azure_Capacity/QuotaRequestsBlade"
