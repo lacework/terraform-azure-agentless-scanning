@@ -303,8 +303,8 @@ variable "storage_account_url" {
 
 variable "enable_storage_infrastructure_encryption" {
   type        = bool
-  description = "enable Azure storage account-level infrastructure encryption. Defaults to false"
-  default     = false
+  description = "enable Azure storage account-level infrastructure encryption. Defaults to true"
+  default     = true
 }
 
 variable "execute_now" { 
