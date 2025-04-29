@@ -54,7 +54,7 @@ You will be prompted for the following information about how you intend to deplo
 │ --regions                  -r                        TEXT  Regions (comma-separated) where AWLS will be deployed - if not         │
 │                                                            provided, all regions will be monitored                                │
 │                                                            [default: None]                                                        │
-│ --nat-gateway              -n  --no-nat-gateway  -N        Use NAT Gateway for optimized networking (recommended for 1000+ VMs)   │
+│ --nat-gateway              -n  --no-nat-gateway  -N        Use NAT Gateway for optimized networking                               │
 │                                                            [default: no-nat-gateway]                                              │
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Output ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮

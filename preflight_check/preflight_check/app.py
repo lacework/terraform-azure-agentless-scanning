@@ -232,7 +232,7 @@ def main(
         typer.Option(
             "--nat-gateway/--no-nat-gateway",
             "-n/-N",
-            help="Use NAT Gateway for optimized networking (recommended for 1000+ VMs)",
+            help="Use NAT Gateway for optimized networking",
             rich_help_panel="Deployment Configuration",
         ),
     ] = False,
