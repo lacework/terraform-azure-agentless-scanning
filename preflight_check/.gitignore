@@ -1,0 +1,8 @@
+.python-version
+.venv/
+__pycache__/
+*.pyc
+
+instructions.md
+
+*/preflight_report.json
