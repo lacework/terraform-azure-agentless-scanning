@@ -7,7 +7,25 @@
 
 A Terraform Module to configure the Lacework Agentless Scanner on Azure.
 
+## Preflight Check
 To ensure smooth deployment, please reference our [preflight check](./preflight_check/).
+
+## Deprovisioning
+When running `terraform destroy`, you may encounter the following error:
+```
+│ Error: deleting Subnet (Subscription: "********-****-****-****-************"
+│ Resource Group Name: "lacework-agentless-eddd"
+│ Virtual Network Name: "lacework-virt-network-eddd-eastus"
+│ Subnet Name: "lacework-subnet-eddd-eastus"): performing Delete: unexpected status 400 (400 Bad Request) with error: InUseSubnetCannotBeDeleted: Subnet lacework-subnet-eddd-eastus is in use by /subscriptions/********-****-****-****-************/resourceGroups/LACEWORK-AGENTLESS-EDDD/providers/Microsoft.Network/networkInterfaces/LACEWORK-2025-05-05T23.00.00.000Z-0-EASTUS-5372D692/ipConfigurations/LACEWORK-2025-05-05T23.00.00.000Z-0-EASTUS and cannot be deleted. In order to delete the subnet, delete all the resources within the subnet. See aka.ms/deletesubnet.
+```
+
+This is because AWLS was deprovisioned while a scan was in progress, resulting in orphaned resources (VMs dynamically created by AWLS during the scan). To resolve this, delete the VMs by running the following command:
+```
+SCANNING_RESOURCE_GROUP_NAME="lacework-agentless-a09d"
+SCANNING_SUBSCRIPTION_ID="0252a545-04d4-4262-a82c-ceef83344237"
+az vm delete --ids $(az vm list --resource-group "${SCANNING_RESOURCE_GROUP_NAME}" --subscription "${SCANNING_SUBSCRIPTION_ID}" --query "[].id" -o tsv) --yes
+```
+You can find the scanning resource group name and the scanning subscription ID in the integration details in the FortiCNAPP Console (_Settings_ -> _Cloud Accounts_ -> \*select your AWLS Azure integration\*).
 
 All code contributions made by Lacework customers to this repo are considered ‘Feedback’ under section 4.3 of the Lacework Terms of Service.
 <!-- BEGIN_TF_DOCS -->
