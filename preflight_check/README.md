@@ -119,6 +119,7 @@ In the following steps, we will assign the necessary permissions to this service
             "Microsoft.Authorization/roleAssignments/*",
             "Microsoft.Authorization/roleDefinitions/*",
             "Microsoft.Compute/virtualMachines/read",
+            "Microsoft.Compute/virtualMachines/delete",
             "Microsoft.Compute/virtualMachineScaleSets/read",
             "Microsoft.Compute/virtualMachineScaleSets/virtualMachines/read",
             "Microsoft.KeyVault/vaults/*",
