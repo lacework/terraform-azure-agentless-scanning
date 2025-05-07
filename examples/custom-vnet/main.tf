@@ -34,7 +34,7 @@ resource "azurerm_network_security_group" "example" {
 }
 
 resource "azurerm_virtual_network" "example" {
-  depends_on          = [azurerm_network_security_group.lw]
+  depends_on          = [azurerm_network_security_group.example]
   name                = "example-vnet"
   address_space       = ["10.0.0.0/16"]
   location            = local.region
@@ -43,7 +43,7 @@ resource "azurerm_virtual_network" "example" {
   subnet {
     name           = "example-subnet"
     address_prefix = "10.0.0.0/16"
-    security_group = azurerm_network_security_group.lw.id
+    security_group = azurerm_network_security_group.example.id
   }
 }
 
