@@ -126,3 +126,7 @@ RoleDefinitionName                         Scope
 AWLS Deployment                            /subscriptions/0252a545-04d4-4262-a82c-ceef83344237
 AWLS Deployment - Monitored Subscriptions  /providers/Microsoft.Management/managementGroups/a329d4bf-4557-4ccf-b132-84e7025ea22d
 ```
+
+## Authenticating with the Service Principal
+
+Once the service principal has been created and assigned the necessary permissions, you can authenticate Azure CLI using the service principal as instructed here: https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli-service-principal.
