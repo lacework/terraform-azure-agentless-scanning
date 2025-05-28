@@ -1,5 +1,12 @@
 # Creating a Service Principal to Deploy AWLS
-We suggest creating a new Azure service principal to use specifically for deploying AWLS. You can do so by executing the terraform module in this directory, or by following the steps below.
+We suggest creating a new Azure service principal to use specifically for deploying AWLS. You can do so by executing the terraform module in this directory, or by following the steps below. 
+
+Please note that in order to create the service principal with sufficient permissions (via the terraform module or manually by following the steps below), the az cli must be authenticated as a principal with at least the following permissions:
+
+* `Microsoft.Authorization/roleAssignments/*`
+* `Microsoft.Authorization/roleDefinitions/*`
+* `Microsoft.Graph/Application.ReadWrite.All`
+* `Microsoft.Graph/Directory.ReadWrite.All`
 
 If you do not wish to create a new service principal, you can authenticate as an Azure user, as long as the user has the necessary permissions listed in the steps below.
 
