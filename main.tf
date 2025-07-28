@@ -12,16 +12,15 @@ provider "azurerm" {
   /* Use scanning_subscription_id from either direct input or global_module_reference
      Extract the subscription id if it's in the fully qualified form ("/subscriptions/xxx")
   */
-  subscription_id = coalesce(
-    var.scanning_subscription_id != "" ? try(
-      regex("^/subscriptions/([A-Za-z0-9-_]+)$", var.scanning_subscription_id)[0],
-      var.scanning_subscription_id
-    ) : "",
+  subscription_id = var.scanning_subscription_id != "" ? try(
+    regex("^/subscriptions/([A-Za-z0-9-_]+)$", var.scanning_subscription_id)[0],
+    var.scanning_subscription_id
+    ) : (
     // Regional modules use the scanning_subscription_id from the global module reference
-    try(
+    length(var.global_module_reference.scanning_subscription_id) > 0 ? try(
       regex("^/subscriptions/([A-Za-z0-9-_]+)$", var.global_module_reference.scanning_subscription_id)[0],
       var.global_module_reference.scanning_subscription_id
-    ),
+    ) : null
   )
 }
 
@@ -72,12 +71,12 @@ locals {
   storage_account_id   = var.global ? azurerm_storage_account.scanning[0].id : var.global_module_reference.storage_account_id
 
   included_subscriptions_local = (var.global
-      ? var.included_subscriptions
-      : var.global_module_reference.included_subscriptions
+    ? var.included_subscriptions
+    : var.global_module_reference.included_subscriptions
   )
   excluded_subscriptions_local = (var.global
-      ? var.excluded_subscriptions
-      : var.global_module_reference.excluded_subscriptions
+    ? var.excluded_subscriptions
+    : var.global_module_reference.excluded_subscriptions
   )
 
   /* Convert the excluded and included subscriptions to the format required by the Lacework AWLS integration
@@ -87,7 +86,7 @@ locals {
   */
   included_subscriptions_list = [for sub in local.included_subscriptions_local : replace(sub, "//subscriptions//", "")]
   excluded_subscriptions_list = [for sub in local.excluded_subscriptions_local : replace(sub, "//subscriptions//", "-")]
-  subscriptions_list = var.integration_level == "SUBSCRIPTION" ? local.included_subscriptions_list : local.excluded_subscriptions_list
+  subscriptions_list          = var.integration_level == "SUBSCRIPTION" ? local.included_subscriptions_list : local.excluded_subscriptions_list
 
   /* Define the scope for the monitored role
   - For SUBSCRIPTION integration level, we set the scope to the set of included subscriptions specified by the user
@@ -96,8 +95,8 @@ locals {
   root_management_group_scope = ["/providers/Microsoft.Management/managementGroups/${local.tenant_id}"]
   monitored_role_scopes = tolist(
     var.integration_level == "SUBSCRIPTION"
-      ? local.included_subscriptions_local
-      : local.root_management_group_scope
+    ? local.included_subscriptions_local
+    : local.root_management_group_scope
   )
 
   environment_variables = {
@@ -123,8 +122,8 @@ locals {
     AZURE_CONTAINER_REGION            = local.container_region
     USE_PUBLIC_IPS                    = local.use_public_ips
   }
-  environment_variables_as_list =  concat([for key, val in local.environment_variables : { name = key, value = val }],
-   [for obj in var.additional_environment_variables : { name = obj["name"], value = obj["value"] }])
+  environment_variables_as_list = concat([for key, val in local.environment_variables : { name = key, value = val }],
+  [for obj in var.additional_environment_variables : { name = obj["name"], value = obj["value"] }])
 
   key_vault_id = var.global ? azurerm_key_vault.lw_orchestrate[0].id : (
     length(var.global_module_reference.key_vault_id) > 0 ? var.global_module_reference.key_vault_id : var.key_vault_id
@@ -144,8 +143,8 @@ locals {
 
   custom_network = length(var.custom_network) > 0 ? var.custom_network : (var.regional ? azurerm_subnet.agentless_subnet[0].id : "")
 
-  region            = lower(replace(var.region, " ", ""))
-  integration_level = upper(var.integration_level)
+  region                          = lower(replace(var.region, " ", ""))
+  integration_level               = upper(var.integration_level)
   lacework_integration_name_local = var.global ? var.lacework_integration_name : var.global_module_reference.lacework_integration_name
 
   version_file   = "${abspath(path.module)}/VERSION"
@@ -161,7 +160,7 @@ locals {
     australiasoutheast = "australiaeast"
   }
   container_region = lookup(local.unsupported_region_replacements, local.region, local.region)
-  use_public_ips = var.use_nat_gateway ? "false" : "true"
+  use_public_ips   = var.use_nat_gateway ? "false" : "true"
 }
 
 resource "random_id" "uniq" {
@@ -216,7 +215,7 @@ resource "lacework_integration_azure_agentless_scanning" "lacework_cloud_account
   scan_stopped_instances       = var.scan_stopped_instances
   query_text                   = var.filter_query_text
   // The Lacework AWLS integration API expects subscription IDs without the "/subscriptions/" prefix
-  subscriptions_list           = local.subscriptions_list
+  subscriptions_list = local.subscriptions_list
 }
 
 /* **************** General **************** 
@@ -495,12 +494,12 @@ resource "azurerm_subnet_network_security_group_association" "agentless_nsg_asso
   count = var.regional && length(var.custom_network) == 0 ? 1 : 0
 
   subnet_id                 = azurerm_subnet.agentless_subnet[0].id
-  network_security_group_id = length(var.custom_network_security_group) > 0 ? var.custom_network_security_group: azurerm_network_security_group.agentless_orchestrate[0].id
+  network_security_group_id = length(var.custom_network_security_group) > 0 ? var.custom_network_security_group : azurerm_network_security_group.agentless_orchestrate[0].id
 }
 
 resource "azurerm_public_ip" "agentless_public_ip" {
   depends_on = [azurerm_resource_group.scanning_rg]
-  count = var.regional && var.use_nat_gateway ? 1 : 0
+  count      = var.regional && var.use_nat_gateway ? 1 : 0
 
   name                = replace("${local.prefix}-public-ip-${local.region}-${local.suffix}", " ", "-")
   location            = local.region
@@ -513,11 +512,11 @@ resource "azurerm_public_ip" "agentless_public_ip" {
 
 resource "azurerm_nat_gateway" "agentless_nat_gateway" {
   depends_on = [azurerm_resource_group.scanning_rg]
-  count = var.regional && var.use_nat_gateway ? 1 : 0
+  count      = var.regional && var.use_nat_gateway ? 1 : 0
 
-  name                    = replace("${local.prefix}-nat-gateway-${local.region}-${local.suffix}", " ", "-")
-  location                = local.region
-  resource_group_name     = local.scanning_resource_group_name
+  name                = replace("${local.prefix}-nat-gateway-${local.region}-${local.suffix}", " ", "-")
+  location            = local.region
+  resource_group_name = local.scanning_resource_group_name
 
   tags = var.tags
 }
@@ -532,7 +531,7 @@ resource "azurerm_nat_gateway_public_ip_association" "agentless_ip_association" 
 resource "azurerm_subnet_nat_gateway_association" "agentless_nat_gateway_association" {
   count = var.regional && var.use_nat_gateway ? 1 : 0
 
-  subnet_id      =  length(var.custom_network) > 0 ? var.custom_network : azurerm_subnet.agentless_subnet[0].id
+  subnet_id      = length(var.custom_network) > 0 ? var.custom_network : azurerm_subnet.agentless_subnet[0].id
   nat_gateway_id = azurerm_nat_gateway.agentless_nat_gateway[0].id
 }
 
