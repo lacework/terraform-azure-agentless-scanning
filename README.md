@@ -43,11 +43,11 @@ All code contributions made by Lacework customers to this repo are considered â€
 
 | Name | Version |
 |------|---------|
-| <a name="provider_azapi"></a> [azapi](#provider\_azapi) | 1.15.0 |
-| <a name="provider_azuread"></a> [azuread](#provider\_azuread) | 3.4.0 |
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | 4.37.0 |
-| <a name="provider_lacework"></a> [lacework](#provider\_lacework) | 2.0.7 |
-| <a name="provider_random"></a> [random](#provider\_random) | 3.7.2 |
+| <a name="provider_azapi"></a> [azapi](#provider\_azapi) | ~> 1.15.0 |
+| <a name="provider_azuread"></a> [azuread](#provider\_azuread) | ~> 3.4 |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 4.37 |
+| <a name="provider_lacework"></a> [lacework](#provider\_lacework) | ~> 2.0 |
+| <a name="provider_random"></a> [random](#provider\_random) | n/a |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules
