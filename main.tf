@@ -9,13 +9,19 @@ provider "azurerm" {
       prevent_deletion_if_contains_resources = false
     }
   }
-  /* use the current resource manager subscription if it's not provided, otherwise  
-  extract the subscription id if it's in the fully qualified form ("/subscriptions/xxx"),
-  otherwise just use the subscription id as it is. 
+  /* Use scanning_subscription_id from either direct input or global_module_reference
+     Extract the subscription id if it's in the fully qualified form ("/subscriptions/xxx")
   */
-  subscription_id = var.scanning_subscription_id == "" ? null : try(
-    regex("^/subscriptions/([A-Za-z0-9-_]+)$", var.scanning_subscription_id)[0],
-    var.scanning_subscription_id
+  subscription_id = coalesce(
+    var.scanning_subscription_id != "" ? try(
+      regex("^/subscriptions/([A-Za-z0-9-_]+)$", var.scanning_subscription_id)[0],
+      var.scanning_subscription_id
+    ) : "",
+    // Regional modules use the scanning_subscription_id from the global module reference
+    try(
+      regex("^/subscriptions/([A-Za-z0-9-_]+)$", var.global_module_reference.scanning_subscription_id)[0],
+      var.global_module_reference.scanning_subscription_id
+    ),
   )
 }
 

@@ -324,6 +324,7 @@ variable "global_module_reference" {
   type = object({
     scanning_resource_group_name              = string
     scanning_resource_group_id                = string
+    scanning_subscription_id                  = string
     key_vault_id                              = string
     key_vault_uri                             = string
     key_vault_secret_name                     = string
@@ -345,6 +346,7 @@ variable "global_module_reference" {
   default = {
     scanning_resource_group_name              = ""
     scanning_resource_group_id                = ""
+    scanning_subscription_id                  = ""
     key_vault_id                              = ""
     key_vault_uri                             = ""
     key_vault_secret_name                     = ""
