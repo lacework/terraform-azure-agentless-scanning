@@ -157,6 +157,7 @@ No modules.
 | <a name="output_prefix"></a> [prefix](#output\_prefix) | Prefix used to add uniqueness to resource names. |
 | <a name="output_scanning_resource_group_id"></a> [scanning\_resource\_group\_id](#output\_scanning\_resource\_group\_id) | Id of the resource group hosting the scanner |
 | <a name="output_scanning_resource_group_name"></a> [scanning\_resource\_group\_name](#output\_scanning\_resource\_group\_name) | Name of the resource group hosting the scanner |
+| <a name="output_scanning_subscription_id"></a> [scanning\_subscription\_id](#output\_scanning\_subscription\_id) | The subscription ID where scanning resources are deployed |
 | <a name="output_scanning_subscription_role_definition_id"></a> [scanning\_subscription\_role\_definition\_id](#output\_scanning\_subscription\_role\_definition\_id) | The id of the scanning subscription role definition |
 | <a name="output_sidekick_client_id"></a> [sidekick\_client\_id](#output\_sidekick\_client\_id) | Client id of the managed identity running scanner |
 | <a name="output_sidekick_principal_id"></a> [sidekick\_principal\_id](#output\_sidekick\_principal\_id) | The principal id of the user identity used by agentless scanner |
