@@ -108,3 +108,8 @@ output "scanning_subscription_id" {
   value       = data.azurerm_subscription.current.subscription_id
   description = "The subscription ID where scanning resources are deployed"
 }
+
+output "lacework_integration_guid" {
+  value = length(lacework_integration_azure_agentless_scanning.lacework_cloud_account) > 0 ? lacework_integration_azure_agentless_scanning.lacework_cloud_account[0].intg_guid : null
+  description = "GUID of the created Lacework integration"
+}

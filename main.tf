@@ -413,7 +413,7 @@ resource "azurerm_role_assignment" "storage_sidekick" {
 resource "azurerm_role_assignment" "storage_data_loader" {
   count = var.global ? 1 : 0
 
-  principal_id         = azuread_service_principal.data_loader[0].id
+  principal_id         = azuread_service_principal.data_loader[0].object_id
   role_definition_name = "Storage Blob Data Reader"
   scope                = local.storage_account_id
 }
@@ -642,9 +642,4 @@ resource "terraform_data" "job_execution_now" {
 data "lacework_metric_module" "lwmetrics" {
   name    = local.module_name
   version = local.module_version
-}
-
-output "lacework_integration_guid" {
-  value       = lacework_integration_azure_agentless_scanning.lacework_cloud_account[0].intg_guid
-  description = "GUID of the created Lacework integration"
 }
