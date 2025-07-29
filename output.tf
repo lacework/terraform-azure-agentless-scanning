@@ -103,3 +103,8 @@ output "excluded_subscriptions" {
   value = local.excluded_subscriptions_local
   description = "The excluded subscriptions list in global module reference"
 }
+
+output "scanning_subscription_id" {
+  value       = data.azurerm_subscription.current.subscription_id
+  description = "The subscription ID where scanning resources are deployed"
+}
