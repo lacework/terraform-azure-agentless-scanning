@@ -186,6 +186,15 @@ data "azurerm_resource_group" "scanning_rg" {
   name = local.scanning_resource_group_name
 }
 
+// Azure role propagation takes few seconds,so we are adding sleep before calling lacework api. 
+resource "time_sleep" "wait_for_role_assignment_propagation" {
+  depends_on = [
+    azurerm_role_assignment.storage_data_loader,
+    azurerm_role_assignment.storage_sidekick,
+  ]
+  create_duration = "20s" // adjust if needed
+}
+
 // Lacework Cloud Account Integration
 resource "lacework_integration_azure_agentless_scanning" "lacework_cloud_account" {
   count = var.global ? 1 : 0
@@ -195,6 +204,7 @@ resource "lacework_integration_azure_agentless_scanning" "lacework_cloud_account
   depends_on = [
     azuread_service_principal.data_loader,
     azurerm_storage_container.scanning,
+    time_sleep.wait_for_role_assignment_propagation,
   ]
 
   name = local.lacework_integration_name_local
@@ -403,7 +413,7 @@ resource "azurerm_role_assignment" "storage_sidekick" {
 resource "azurerm_role_assignment" "storage_data_loader" {
   count = var.global ? 1 : 0
 
-  principal_id         = azuread_service_principal.data_loader[0].id
+  principal_id         = azuread_service_principal.data_loader[0].object_id
   role_definition_name = "Storage Blob Data Reader"
   scope                = local.storage_account_id
 }
