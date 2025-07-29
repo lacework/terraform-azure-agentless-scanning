@@ -643,3 +643,8 @@ data "lacework_metric_module" "lwmetrics" {
   name    = local.module_name
   version = local.module_version
 }
+
+output "lacework_integration_guid" {
+  value       = lacework_integration_azure_agentless_scanning.lacework_cloud_account[0].intg_guid
+  description = "GUID of the created Lacework integration"
+}
