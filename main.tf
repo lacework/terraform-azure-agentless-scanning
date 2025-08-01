@@ -633,6 +633,11 @@ resource "azapi_resource_action" "job_execution_now" {
   method      = "POST"
   response_export_values = ["*"]
 
+  body = jsonencode({
+    # Add a dynamic field to force re-creation on every apply
+    trigger = timestamp()
+  })
+
   depends_on = [azapi_resource.container_app_job_agentless]
 }
 
