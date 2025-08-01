@@ -625,16 +625,18 @@ resource "azapi_resource" "container_app_job_agentless" {
 }
 
 # Trigger execution, if requested
-resource "terraform_data" "job_execution_now" {
-  count = var.execute_now && var.regional ? 1 : 0
+resource "azapi_resource_action" "job_execution_now" {
+  count       = var.execute_now && var.regional ? 1 : 0
+  type        = "Microsoft.App/jobs@2023-05-01"
+  resource_id = azapi_resource.container_app_job_agentless[0].id
+  action      = "start"
+  method      = "POST"
+  response_export_values = ["*"]
 
-  provisioner "local-exec" {
-    command = "az containerapp job start --name ${azapi_resource.container_app_job_agentless[0].name} --resource-group ${local.scanning_resource_group_name}"
-  }
-
-  triggers_replace = {
-    always_run = timestamp()
-  }
+  body = jsonencode({
+    # Add a dynamic field to force re-creation on every apply
+    trigger = timestamp()
+  })
 
   depends_on = [azapi_resource.container_app_job_agentless]
 }
