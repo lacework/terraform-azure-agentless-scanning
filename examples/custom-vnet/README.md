@@ -84,6 +84,10 @@ resource "azurerm_virtual_network" "example" {
 module "lacework_azure_agentless_scanning_rg_and_vnet" {
   source = "lacework/agentless-scanning/azure"
 
+  # Specify your Lacework account name - only specify this in the global module.
+  # For example, 'my-org' is the account name in 'my-org.lacework.net'.
+  lacework_account = "my-org"
+
   integration_level              = "TENANT"
   global                         = true
   custom_network                 = tolist(azurerm_virtual_network.example.subnet)[0].id
