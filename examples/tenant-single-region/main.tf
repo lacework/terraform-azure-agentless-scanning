@@ -14,6 +14,4 @@ module "lacework_azure_agentless_scanning_single_tenant" {
   integration_level              = "tenant"
   region                         = "West US"
   tags                           = { "lw-example-tf" : "true" }
-  scanning_subscription_id       = "abcd-1234"
-  tenant_id                      = "efgh-5678"
 }

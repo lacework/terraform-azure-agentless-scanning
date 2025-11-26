@@ -23,7 +23,7 @@ terraform {
 module "lacework_azure_agentless_scanning_subscription_us_west" {
   source = "lacework/agentless-scanning/azure"
 
-  # Replace with your Lacework account name.
+  # Specify your Lacework account name - only specify this in the global module.
   # For example, 'my-org' is the account name in 'my-org.lacework.net'.
   lacework_account = "my-org"
 
