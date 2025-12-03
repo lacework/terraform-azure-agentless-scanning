@@ -349,7 +349,7 @@ resource "azurerm_key_vault_secret" "lw_orchestrate" {
   count = var.global ? 1 : 0
   depends_on = [
     lacework_integration_azure_agentless_scanning.lacework_cloud_account,
-    azurerm_key_vault_access_policy.key_vault_user
+    azurerm_role_assignment.key_vault_user
   ]
 
   /* stores credentials used to authenticate to LW API server */
