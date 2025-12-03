@@ -41,9 +41,9 @@ resource "azurerm_virtual_network" "example" {
   resource_group_name = azurerm_resource_group.example.name
 
   subnet {
-    name           = "example-subnet"
-    address_prefix = "10.0.0.0/16"
-    security_group = azurerm_network_security_group.example.id
+    name             = "example-subnet"
+    address_prefixes = ["10.0.0.0/16"]
+    security_group   = azurerm_network_security_group.example.id
   }
 }
 
@@ -53,6 +53,10 @@ the virtual network and other networking resources above must already exist for
 this to succeed. */
 module "lacework_azure_agentless_scanning_rg_and_vnet" {
   source = "../.."
+
+  # Specify your Lacework account name - only specify this in the global module.
+  # For example, 'my-org' is the account name in 'my-org.lacework.net'.
+  lacework_account = "my-org"
 
   integration_level              = "TENANT"
   global                         = true
