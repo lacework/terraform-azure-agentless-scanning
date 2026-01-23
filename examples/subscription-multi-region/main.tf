@@ -7,6 +7,9 @@ module "lacework_azure_agentless_scanning_subscription_us_west" {
   # For example, 'my-org' is the account name in 'my-org.lacework.net'.
   lacework_account = "my-org"
 
+  // specify the subscription in which AWLS will be deployed
+  scanning_subscription_id       = "abcd-1234"
+
   integration_level              = "SUBSCRIPTION"
   global                         = true
   create_log_analytics_workspace = true

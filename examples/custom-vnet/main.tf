@@ -58,6 +58,9 @@ module "lacework_azure_agentless_scanning_rg_and_vnet" {
   # For example, 'my-org' is the account name in 'my-org.lacework.net'.
   lacework_account = "my-org"
 
+  // specify the subscription in which AWLS will be deployed
+  scanning_subscription_id       = "abcd-1234"
+
   integration_level              = "TENANT"
   global                         = true
   custom_network                 = tolist(azurerm_virtual_network.example.subnet)[0].id
