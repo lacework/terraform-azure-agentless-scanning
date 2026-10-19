@@ -162,7 +162,7 @@ No modules.
 | <a name="input_scan_multi_volume"></a> [scan\_multi\_volume](#input\_scan\_multi\_volume) | Whether to scan secondary volumes. Defaults to `false`. | `bool` | `false` | no |
 | <a name="input_scan_stopped_instances"></a> [scan\_stopped\_instances](#input\_scan\_stopped\_instances) | Whether to scan stopped instances. Defaults to `true`. | `bool` | `true` | no |
 | <a name="input_scanning_resource_group_name"></a> [scanning\_resource\_group\_name](#input\_scanning\_resource\_group\_name) | The name of the resource group where LW sidekick is deployed. Leave blank to create a new one | `string` | `""` | no |
-| <a name="input_scanning_subscription_id"></a> [scanning\_subscription\_id](#input\_scanning\_subscription\_id) | SubcriptionId where LW Sidekick is deployed. Leave blank to use the current one used by Azure Resource Manager. Show it through `az account show` | `string` | `""` | no |
+| <a name="input_scanning_subscription_id"></a> [scanning\_subscription\_id](#input\_scanning\_subscription\_id) | SubcriptionId where LW Sidekick is deployed. The azurerm provider passed to this module must use this subscription, or the plan fails. Leave blank to deploy into the provider's subscription. Show it through `az account show` | `string` | `""` | no |
 | <a name="input_storage_account_url"></a> [storage\_account\_url](#input\_storage\_account\_url) | url of the storage account used for storing analysis artifacts. | `string` | `""` | no |
 | <a name="input_suffix"></a> [suffix](#input\_suffix) | A string to be appended to the end of the name of all new resources. | `string` | `""` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Set of tags which will be added to the resources managed by the module. | `map(string)` | `{}` | no |
