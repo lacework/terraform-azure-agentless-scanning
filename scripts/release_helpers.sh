@@ -215,6 +215,13 @@ load_list_of_changes() {
   _build=$(echo "$_list_of_changes" | grep "\* build[:(]")
   _ci=$(echo "$_list_of_changes" | grep "\* ci[:(]")
   _test=$(echo "$_list_of_changes" | grep "\* test[:(]")
+  # "type!:" / "type(scope)!:" match none of the above. Major versions are set by hand in VERSION.
+  _breaking=$(echo "$_list_of_changes" | grep -E "\* [a-z]+(\([^)]*\))?!:")
+
+  if [ "$_breaking" != "" ]; then
+    echo "## Breaking Changes" >> CHANGES.md
+    echo "$_breaking" >> CHANGES.md
+  fi
 
   if [ "$_feat" != "" ]; then
     echo "## Features" >> CHANGES.md
