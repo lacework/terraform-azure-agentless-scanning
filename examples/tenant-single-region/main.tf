@@ -1,5 +1,17 @@
 provider "lacework" {}
 
+// The module uses this provider for every region. subscription_id must match
+// scanning_subscription_id below.
+provider "azurerm" {
+  subscription_id = "abcd-1234"
+  features {
+    resource_group {
+      // the scanner creates disks in its resource group; let `terraform destroy` remove them
+      prevent_deletion_if_contains_resources = false
+    }
+  }
+}
+
 // Create global resources, includes lacework cloud integration.
 // This will also create regional resources too.
 module "lacework_azure_agentless_scanning_single_tenant" {

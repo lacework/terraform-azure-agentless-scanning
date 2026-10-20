@@ -7,6 +7,36 @@
 
 A Terraform Module to configure the Lacework Agentless Scanner on Azure.
 
+## Provider configuration (v2.0.0 and later)
+This module does not configure the `azurerm` provider. Configure it in your root module and every
+module call (one per region) uses it. Up to v1.x the module configured its own provider, so Terraform
+started one `azurerm` process per region: about 200MB each, roughly 13GB to plan all 59 Azure regions.
+
+The provider must:
+- use the scanning subscription. If you set `scanning_subscription_id`, the plan fails when the
+  provider's subscription is different.
+- let `terraform destroy` delete the scanning resource group even if the scanner left disks in it.
+
+```hcl
+provider "azurerm" {
+  subscription_id = "<scanning subscription id>"
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
+}
+```
+
+If your root module needs `prevent_deletion_if_contains_resources = true` for other resources, give this
+module its own aliased provider with `providers = { azurerm = azurerm.agentless }` on every module call.
+The same applies if module calls deploy into different subscriptions: one aliased provider per subscription.
+
+**Upgrading from v1.x:** add the provider block above, then run `terraform plan`. The resource addresses
+do not change, so the plan shows no changes. Apply it anyway: that apply moves the existing resources in the
+state from the provider the v1 module configured to yours. Do it on its own before you remove a region,
+or Terraform fails with "Provider configuration not present" for the removed region's resources.
+
 ## Preflight Check
 To ensure smooth deployment, please reference our [preflight check](./preflight_check/).
 
@@ -132,7 +162,7 @@ No modules.
 | <a name="input_scan_multi_volume"></a> [scan\_multi\_volume](#input\_scan\_multi\_volume) | Whether to scan secondary volumes. Defaults to `false`. | `bool` | `false` | no |
 | <a name="input_scan_stopped_instances"></a> [scan\_stopped\_instances](#input\_scan\_stopped\_instances) | Whether to scan stopped instances. Defaults to `true`. | `bool` | `true` | no |
 | <a name="input_scanning_resource_group_name"></a> [scanning\_resource\_group\_name](#input\_scanning\_resource\_group\_name) | The name of the resource group where LW sidekick is deployed. Leave blank to create a new one | `string` | `""` | no |
-| <a name="input_scanning_subscription_id"></a> [scanning\_subscription\_id](#input\_scanning\_subscription\_id) | SubcriptionId where LW Sidekick is deployed. Leave blank to use the current one used by Azure Resource Manager. Show it through `az account show` | `string` | `""` | no |
+| <a name="input_scanning_subscription_id"></a> [scanning\_subscription\_id](#input\_scanning\_subscription\_id) | SubcriptionId where LW Sidekick is deployed. The azurerm provider passed to this module must use this subscription, or the plan fails. Leave blank to deploy into the provider's subscription. Show it through `az account show` | `string` | `""` | no |
 | <a name="input_storage_account_url"></a> [storage\_account\_url](#input\_storage\_account\_url) | url of the storage account used for storing analysis artifacts. | `string` | `""` | no |
 | <a name="input_suffix"></a> [suffix](#input\_suffix) | A string to be appended to the end of the name of all new resources. | `string` | `""` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Set of tags which will be added to the resources managed by the module. | `map(string)` | `{}` | no |

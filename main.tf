@@ -1,28 +1,6 @@
-provider "azurerm" {
-  features {
-    resource_group {
-      /* scanner creates disks in the resource group. In regular circumstance those disks are
-      cleaned up by the scanner. However, if `terraform destroy` is run before the scanner
-      can do cleanup, the destroy will fail, because those disks aren't managed by Terraform.
-      Hence we turn off the deletion prevention here.
-      */
-      prevent_deletion_if_contains_resources = false
-    }
-  }
-  /* Use scanning_subscription_id from either direct input or global_module_reference
-     Extract the subscription id if it's in the fully qualified form ("/subscriptions/xxx")
-  */
-  subscription_id = var.scanning_subscription_id != "" ? try(
-    regex("^/subscriptions/([A-Za-z0-9-_]+)$", var.scanning_subscription_id)[0],
-    var.scanning_subscription_id
-    ) : (
-    // Regional modules use the scanning_subscription_id from the global module reference
-    length(var.global_module_reference.scanning_subscription_id) > 0 ? try(
-      regex("^/subscriptions/([A-Za-z0-9-_]+)$", var.global_module_reference.scanning_subscription_id)[0],
-      var.global_module_reference.scanning_subscription_id
-    ) : null
-  )
-}
+/* This module does not configure the azurerm provider: the caller passes one in (see README).
+A provider block here would make Terraform start one azurerm process per module call, i.e.
+per region, and a 59-region deployment then needs ~13GB of memory to plan. */
 
 data "lacework_user_profile" "current" {
 }
@@ -55,7 +33,13 @@ locals {
 
   owners = length(var.owner_id) > 0 ? [var.owner_id, data.azurerm_client_config.current.object_id] : [data.azurerm_client_config.current.object_id]
 
-  tenant_id                     = length(var.tenant_id) > 0 ? var.tenant_id : data.azurerm_subscription.current.tenant_id
+  tenant_id = length(var.tenant_id) > 0 ? var.tenant_id : data.azurerm_subscription.current.tenant_id
+  /* scanning_subscription_id, or the global module's for a regional module, without the
+  "/subscriptions/" prefix. Empty means use whatever subscription the azurerm provider has. */
+  requested_scanning_subscription_id = lower(trimprefix(
+    var.scanning_subscription_id != "" ? var.scanning_subscription_id : var.global_module_reference.scanning_subscription_id,
+    "/subscriptions/"
+  ))
   scanning_subscription_id      = data.azurerm_subscription.current.id
   scanning_subscription_id_only = regex("^/subscriptions/([A-Za-z0-9-_]+)$", local.scanning_subscription_id)[0]
   scanning_resource_group_name = length(var.global_module_reference.scanning_resource_group_name) > 0 ? var.global_module_reference.scanning_resource_group_name : (
@@ -165,6 +149,17 @@ locals {
 
 resource "random_id" "uniq" {
   byte_length = 2
+
+  /* The caller's azurerm provider decides the scanning subscription, so fail the plan if it is
+  not the one this module was asked to deploy into. This sits here, on a resource every module
+  call has, because a postcondition on data.azurerm_subscription.current would make regional
+  modules defer that read to apply (it would depend on the global module's pending changes). */
+  lifecycle {
+    precondition {
+      condition     = local.requested_scanning_subscription_id == "" || lower(data.azurerm_subscription.current.subscription_id) == local.requested_scanning_subscription_id
+      error_message = "The azurerm provider passed to this module uses subscription ${data.azurerm_subscription.current.subscription_id}, but scanning_subscription_id (or the global module's) is ${local.requested_scanning_subscription_id}. Set subscription_id = \"${local.requested_scanning_subscription_id}\" on that azurerm provider."
+    }
+  }
 }
 
 resource "azurerm_resource_group" "scanning_rg" {

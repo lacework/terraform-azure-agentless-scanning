@@ -216,7 +216,7 @@ variable "tenant_id" {
 variable "scanning_subscription_id" {
   type        = string
   default     = ""
-  description = "SubcriptionId where LW Sidekick is deployed. Leave blank to use the current one used by Azure Resource Manager. Show it through `az account show`"
+  description = "SubcriptionId where LW Sidekick is deployed. The azurerm provider passed to this module must use this subscription, or the plan fails. Leave blank to deploy into the provider's subscription. Show it through `az account show`"
 }
 
 variable "scanning_resource_group_name" {
