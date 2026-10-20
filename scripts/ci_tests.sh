@@ -27,6 +27,10 @@ integration_tests() {
   for tcase in ${TEST_CASES[*]}; do
     log "Running tests at $tcase"
     ( cd $tcase || exit 1
+      # the examples use the placeholder subscription "abcd-1234": plan against the real one,
+      # and put the example back afterwards
+      sed -i.orig "s/abcd-1234/${ARM_SUBSCRIPTION_ID}/g" main.tf
+      trap 'mv main.tf.orig main.tf' EXIT
       terraform init
       terraform validate
       terraform plan
