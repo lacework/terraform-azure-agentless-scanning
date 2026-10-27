@@ -621,16 +621,17 @@ resource "azapi_resource" "container_app_job_agentless" {
 
 # Trigger execution, if requested
 resource "azapi_resource_action" "job_execution_now" {
-  count       = var.execute_now && var.regional ? 1 : 0
-  type        = "Microsoft.App/jobs@2023-05-01"
-  resource_id = azapi_resource.container_app_job_agentless[0].id
-  action      = "start"
-  method      = "POST"
+  count                  = var.execute_now && var.regional ? 1 : 0
+  type                   = "Microsoft.App/jobs@2023-05-01"
+  resource_id            = azapi_resource.container_app_job_agentless[0].id
+  action                 = "start"
+  method                 = "POST"
   response_export_values = ["*"]
 
   body = jsonencode({
-    # Add a dynamic field to force re-creation on every apply
-    trigger = timestamp()
+    # Re-create this action (and thus start the job) only when the container
+    # app job's configuration changes, rather than on every apply
+    trigger = sha256(azapi_resource.container_app_job_agentless[0].body)
   })
 
   depends_on = [azapi_resource.container_app_job_agentless]
