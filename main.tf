@@ -629,7 +629,7 @@ resource "azapi_resource_action" "job_execution_now" {
   response_export_values = ["*"]
 
   body = jsonencode({
-    # Re-create this action (and thus start the job) only when the container
+    # Re-run this action (and thus start the job) only when the container
     # app job's configuration changes, rather than on every apply
     trigger = sha256(azapi_resource.container_app_job_agentless[0].body)
   })
