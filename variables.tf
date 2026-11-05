@@ -88,9 +88,9 @@ variable "custom_network_security_group" {
     error_message = "Incorrectly formatted network security group input. Use a full Resource ID in this format: /subscriptions/<subscription_id>/resourceGroups/<rg_id>/providers/Microsoft.Network/networkSecurityGroups/<nsg_id>."
   }
   validation {
-    condition     = (length(var.custom_network_security_group) == 0  && length(var.custom_network) == 0) || (
+    condition = (length(var.custom_network_security_group) == 0 && length(var.custom_network) == 0) || (
       length(var.custom_network_security_group) != 0 && length(var.custom_network) != 0 && var.use_nat_gateway == true) || (
-      length(var.custom_network_security_group) == 0 && length(var.custom_network) != 0 && var.use_nat_gateway == false)
+    length(var.custom_network_security_group) == 0 && length(var.custom_network) != 0 && var.use_nat_gateway == false)
     error_message = "You must specify a custom network security group if using a custom virtual network and a NAT gateway. "
   }
 }
@@ -248,11 +248,11 @@ variable "included_subscriptions" {
     error_message = "included_subscriptions must be a list of fully qualified subscriptions (starting with '/subscriptions/')"
   }
   validation {
-    condition = !var.global || ((length(var.included_subscriptions) > 0) == (upper(var.integration_level) == "SUBSCRIPTION"))
+    condition     = !var.global || ((length(var.included_subscriptions) > 0) == (upper(var.integration_level) == "SUBSCRIPTION"))
     error_message = "included_subscriptions must be specified if and only if integration_level == 'SUBSCRIPTION'."
   }
   validation {
-    condition = (length(var.included_subscriptions) > 0 ? var.global : true)
+    condition     = (length(var.included_subscriptions) > 0 ? var.global : true)
     error_message = "included_subscriptions must only be specified in the global resource - cannot be specified with global == false"
   }
 }
@@ -268,13 +268,13 @@ variable "excluded_subscriptions" {
   }
   validation {
     condition = (
-      length(var.excluded_subscriptions) > 0 ? 
+      length(var.excluded_subscriptions) > 0 ?
       upper(var.integration_level) == "TENANT" : true
     )
     error_message = "excluded_subscriptions can only be specified when `integration_level == 'TENANT'`."
   }
   validation {
-    condition = (length(var.excluded_subscriptions) > 0 ? var.global : true)
+    condition     = (length(var.excluded_subscriptions) > 0 ? var.global : true)
     error_message = "excluded_subscriptions must only be specified in the global resource - cannot be specified with global == false"
   }
 }
@@ -307,10 +307,10 @@ variable "enable_storage_infrastructure_encryption" {
   default     = false
 }
 
-variable "execute_now" { 
-  type = bool
-  description = "execute newly created job(s) immediately after deployment"
-  default = true
+variable "execute_now" {
+  type        = bool
+  description = "execute job(s) immediately after they are created or their configuration is updated"
+  default     = true
 }
 /* **************** End Storage Section **************** */
 
