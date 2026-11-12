@@ -37,6 +37,23 @@ do not change, so the plan shows no changes. Apply it anyway: that apply moves t
 state from the provider the v1 module configured to yours. Do it on its own before you remove a region,
 or Terraform fails with "Provider configuration not present" for the removed region's resources.
 
+## Using an existing Key Vault
+By default the global module creates the Key Vault that holds the Lacework account and token. If your policies
+require a Key Vault configured your way (for example RBAC authorization and purge protection), create it yourself
+and pass its ID in `key_vault_id` on the global module. The module then writes the secret to that Key Vault and
+grants the scanner identity read access to its secrets: the `Key Vault Secrets User` role if the Key Vault uses
+RBAC authorization, or an access policy with `Get` if it uses access policies. It grants nothing else on the Key Vault.
+
+The Key Vault must:
+- be in the scanning subscription. Otherwise the plan fails.
+- let the identity running Terraform set, get and delete secrets, for example with the `Key Vault Secrets Officer`
+  role, or an access policy with `Get`, `List`, `Set`, `Delete`, `Recover` and `Purge`.
+- allow access from all networks: the scanner reaches it over its public endpoint.
+- exist when the module is planned. If you create it in the same configuration, apply it first with `-target`,
+  then apply the rest. See [examples/existing-key-vault](examples/existing-key-vault/).
+
+The scanner can read every secret in the Key Vault, so use one that is dedicated to Lacework.
+
 ## Preflight Check
 To ensure smooth deployment, please reference our [preflight check](./preflight_check/).
 
@@ -104,6 +121,7 @@ No modules.
 | [azurerm_network_security_group.agentless_orchestrate](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) | resource |
 | [azurerm_public_ip.agentless_public_ip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) | resource |
 | [azurerm_resource_group.scanning_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) | resource |
+| [azurerm_role_assignment.key_vault_secrets_sidekick](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
 | [azurerm_role_assignment.key_vault_sidekick](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
 | [azurerm_role_assignment.key_vault_user](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
 | [azurerm_role_assignment.orchestrate](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
@@ -123,6 +141,7 @@ No modules.
 | [random_id.uniq](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) | resource |
 | [time_sleep.wait_for_role_assignment_propagation](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
 | [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) | data source |
+| [azurerm_key_vault.existing](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/key_vault) | data source |
 | [azurerm_resource_group.scanning_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/resource_group) | data source |
 | [azurerm_subscription.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/subscription) | data source |
 | [azurerm_subscriptions.available](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/subscriptions) | data source |
@@ -147,7 +166,7 @@ No modules.
 | <a name="input_image_url"></a> [image\_url](#input\_image\_url) | The container image url for Lacework Agentless Workload Scanning. | `string` | `"sidekickpublic.azurecr.io/sidekick:latest"` | no |
 | <a name="input_included_subscriptions"></a> [included\_subscriptions](#input\_included\_subscriptions) | List of subscriptions to be monitored. Must be specified with `integration_level = 'SUBSCRIPTION'`. Set only for global resource. | `set(string)` | `[]` | no |
 | <a name="input_integration_level"></a> [integration\_level](#input\_integration\_level) | If we are integrating into a subscription or tenant. Valid values are 'SUBSCRIPTION' or 'TENANT' | `string` | n/a | yes |
-| <a name="input_key_vault_id"></a> [key\_vault\_id](#input\_key\_vault\_id) | The ID of the Key Vault containing the Lacework Account and Auth Token | `string` | `""` | no |
+| <a name="input_key_vault_id"></a> [key\_vault\_id](#input\_key\_vault\_id) | The ID of an existing Key Vault to store the Lacework Account and Auth Token. When set on the global module, the module uses this Key Vault instead of creating one and only grants the scanner identity read access to its secrets. The Key Vault must be in the scanning subscription and must already exist when this module is planned, and the identity running Terraform must be able to set, get and delete secrets in it. See the README for details. | `string` | `""` | no |
 | <a name="input_lacework_account"></a> [lacework\_account](#input\_lacework\_account) | The name of the Lacework account with which to integrate. | `string` | `""` | no |
 | <a name="input_lacework_domain"></a> [lacework\_domain](#input\_lacework\_domain) | The domain of the Lacework account with with to integrate. | `string` | `"lacework.net"` | no |
 | <a name="input_lacework_integration_name"></a> [lacework\_integration\_name](#input\_lacework\_integration\_name) | The name of the Lacework cloud account integration. Should only be set in global resource | `string` | `"azure-agentless-scanning"` | no |

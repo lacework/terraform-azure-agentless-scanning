@@ -109,11 +109,18 @@ locals {
   environment_variables_as_list = concat([for key, val in local.environment_variables : { name = key, value = val }],
   [for obj in var.additional_environment_variables : { name = obj["name"], value = obj["value"] }])
 
-  key_vault_id = var.global ? azurerm_key_vault.lw_orchestrate[0].id : (
+  use_existing_key_vault       = var.global && length(var.key_vault_id) > 0
+  existing_key_vault_uses_rbac = local.use_existing_key_vault ? data.azurerm_key_vault.existing[0].enable_rbac_authorization : false
+
+  key_vault_id = var.global ? (
+    local.use_existing_key_vault ? var.key_vault_id : azurerm_key_vault.lw_orchestrate[0].id
+    ) : (
     length(var.global_module_reference.key_vault_id) > 0 ? var.global_module_reference.key_vault_id : var.key_vault_id
   )
   key_vault_secret_name = var.global ? "${local.prefix}-secret-${local.suffix}" : var.global_module_reference.key_vault_secret_name
-  key_vault_uri         = var.global ? azurerm_key_vault.lw_orchestrate[0].vault_uri : var.global_module_reference.key_vault_uri
+  key_vault_uri = var.global ? (
+    local.use_existing_key_vault ? data.azurerm_key_vault.existing[0].vault_uri : azurerm_key_vault.lw_orchestrate[0].vault_uri
+  ) : var.global_module_reference.key_vault_uri
 
   /* role_definition_id created as part of azurerm_role_definition creation contains an extra '|' character in the end, which needs to be removed (using split) */
   monitored_subscription_role_definition_id = var.global ? split("|", azurerm_role_definition.agentless_monitored_subscription[0].id)[0] : var.global_module_reference.monitored_subscription_role_definition_id
@@ -268,8 +275,22 @@ resource "azurerm_user_assigned_identity" "sidekick" {
 /* **************** Key Vault **************** 
 Define the key vault which holds integration details 
 */
+data "azurerm_key_vault" "existing" {
+  count = local.use_existing_key_vault ? 1 : 0
+
+  name                = element(split("/", var.key_vault_id), length(split("/", var.key_vault_id)) - 1)
+  resource_group_name = split("/", var.key_vault_id)[4]
+
+  lifecycle {
+    precondition {
+      condition     = lower(split("/", var.key_vault_id)[2]) == lower(data.azurerm_subscription.current.subscription_id)
+      error_message = "The Key Vault in key_vault_id is in subscription ${split("/", var.key_vault_id)[2]}, but the azurerm provider passed to this module uses subscription ${data.azurerm_subscription.current.subscription_id}. Use a Key Vault in subscription ${data.azurerm_subscription.current.subscription_id}."
+    }
+  }
+}
+
 resource "azurerm_key_vault" "lw_orchestrate" {
-  count      = var.global ? 1 : 0
+  count      = var.global && !local.use_existing_key_vault ? 1 : 0
   depends_on = [azurerm_resource_group.scanning_rg]
 
   name                       = "${local.prefix}-agentless-${local.suffix}"
@@ -292,13 +313,13 @@ id (as an env variable) to be created, while the key vault needs the container
 app managed identity to create access policies.
  */
 resource "azurerm_key_vault_access_policy" "access_for_sidekick" {
-  count = var.global ? 1 : 0
+  count = var.global && !local.existing_key_vault_uses_rbac ? 1 : 0
 
   key_vault_id = local.key_vault_id
   tenant_id    = local.tenant_id
   object_id    = local.sidekick_principal_id
 
-  secret_permissions = [
+  secret_permissions = local.use_existing_key_vault ? ["Get"] : [
     "Set",
     "Delete",
     "Get",
@@ -307,7 +328,7 @@ resource "azurerm_key_vault_access_policy" "access_for_sidekick" {
 }
 
 resource "azurerm_key_vault_access_policy" "access_for_user" {
-  count = var.global ? 1 : 0
+  count = var.global && !local.use_existing_key_vault ? 1 : 0
 
   key_vault_id = local.key_vault_id
   tenant_id    = local.tenant_id
@@ -328,7 +349,7 @@ resource "azurerm_key_vault_access_policy" "access_for_user" {
 
 /* assign key vault contributor role to the service principal */
 resource "azurerm_role_assignment" "key_vault_sidekick" {
-  count = var.global ? 1 : 0
+  count = var.global && !local.use_existing_key_vault ? 1 : 0
 
   scope                = local.key_vault_id
   role_definition_name = "Key Vault Contributor"
@@ -337,11 +358,19 @@ resource "azurerm_role_assignment" "key_vault_sidekick" {
 
 /* assign key vault contributor role to the current user */
 resource "azurerm_role_assignment" "key_vault_user" {
-  count = var.global ? 1 : 0
+  count = var.global && !local.use_existing_key_vault ? 1 : 0
 
   scope                = local.key_vault_id
   role_definition_name = "Key Vault Contributor"
   principal_id         = data.azurerm_client_config.current.object_id
+}
+
+resource "azurerm_role_assignment" "key_vault_secrets_sidekick" {
+  count = local.existing_key_vault_uses_rbac ? 1 : 0
+
+  scope                = local.key_vault_id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = local.sidekick_principal_id
 }
 
 resource "azurerm_key_vault_secret" "lw_orchestrate" {
