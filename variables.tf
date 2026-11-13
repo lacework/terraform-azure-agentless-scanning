@@ -42,8 +42,15 @@ variable "suffix" {
 
 variable "key_vault_id" {
   type        = string
-  description = "The ID of the Key Vault containing the Lacework Account and Auth Token"
+  description = "The ID of an existing Key Vault to store the Lacework Account and Auth Token. When set on the global module, the module uses this Key Vault instead of creating one and only grants the scanner identity read access to its secrets. The Key Vault must be in the scanning subscription and must already exist when this module is planned, and the identity running Terraform must be able to set, get and delete secrets in it. See the README for details."
   default     = ""
+
+  validation {
+    condition = length(var.key_vault_id) == 0 || can(
+      regex("^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft.KeyVault/vaults/[^/]+$", var.key_vault_id)
+    )
+    error_message = "Incorrectly formatted Key Vault input. Use a full Resource ID in this format: /subscriptions/<subscription_id>/resourceGroups/<rg_name>/providers/Microsoft.KeyVault/vaults/<key_vault_name>."
+  }
 }
 
 # Scanner configuration 
