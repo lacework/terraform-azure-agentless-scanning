@@ -1,7 +1,7 @@
 # Release Notes
-Another day, another release. These are the release notes for the version `v2.0.1`.
+Another day, another release. These are the release notes for the version `v2.0.2`.
 
 ## Bug Fixes
-* fix: trigger execute_now scan only when the container app job changes (#74) (Timothy Nguyen)([a3e859b](https://github.com/lacework/terraform-azure-agentless-scanning/commit/a3e859bc1c40d1267e6464c6225bd8c5f431638d))
+* fix(LINK-4201): use the existing Key Vault when key_vault_id is set on the global module (#75) (jtsai01)([0248584](https://github.com/lacework/terraform-azure-agentless-scanning/commit/0248584c26213a1e6240f20feab6782f6b865fa9))
 ## Other Changes
-* ci: version bump to v2.0.1-dev (Lacework)([c56d9b3](https://github.com/lacework/terraform-azure-agentless-scanning/commit/c56d9b3a004a724ab5eeef5e0d164bb371022f79))
+* ci: version bump to v2.0.2-dev (Lacework)([8b6410b](https://github.com/lacework/terraform-azure-agentless-scanning/commit/8b6410b38bf0cc583ae400eeccbfd44aff82dc03))
